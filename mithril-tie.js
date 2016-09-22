@@ -1008,20 +1008,21 @@
 
     basic_input.prototype.type = "String";
 
-    basic_input.prototype.default_option = {
+    basic_input.prototype.option_default = {
       className: "icon-cancel-alt",
       label: ""
     };
 
     function basic_input(tie1, format) {
-      var info, ref;
+      var info, option_default, ref;
       this.tie = tie1;
       this.format = format;
-      ref = this.format, this._id = ref._id, this.options = ref.options, this.attr = ref.attr, this.name = ref.name, this.current = ref.current, info = ref.info;
+      ref = this.format, this._id = ref._id, this.options = ref.options, this.attr = ref.attr, this.name = ref.name, this.current = ref.current, info = ref.info, option_default = ref.option_default;
       this.__info = info;
       this.__uri = Mem.pack[this.type];
       this.__val = Mem.unpack[this.type];
       this.tie.do_draw(this.draw.bind(this));
+      _.assign(this.option_default, option_default);
     }
 
     basic_input.prototype.draw = function() {
@@ -1075,7 +1076,7 @@
       if (value) {
         return ((ref = this.options) != null ? ref[value] : void 0) || {};
       } else {
-        return this.default_option;
+        return this.option_default;
       }
     };
 
@@ -1286,9 +1287,9 @@
 
     select.prototype._attr = change_attr;
 
-    select.prototype.default_option = {
+    select.prototype.option_default = {
       className: "",
-      label: "ーーー"
+      label: "―――"
     };
 
     select.prototype.field = function(m_attr) {
@@ -1570,7 +1571,7 @@
 
     icon.prototype._value = c_icon;
 
-    icon.prototype.default_option = {
+    icon.prototype.option_default = {
       className: "",
       label: "",
       "data-tooltip": "選択しない"

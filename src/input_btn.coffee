@@ -104,7 +104,7 @@ class InputTie.type.checkbox_btn extends btn_input
 
 class InputTie.type.icon extends btn_input
   _value: c_icon
-  default_option:
+  option_default:
     className: ""
     label: ""
     "data-tooltip":　"選択しない"
@@ -119,7 +119,7 @@ class InputTie.type.icon extends btn_input
       when bool
         @_with[value]()
       when ! bool
-        null        
+        null
       else
         # define mode function.
         @_with = {}

@@ -60,16 +60,17 @@ class basic_input
   timeout: 100
   type: "String"
 
-  default_option:
+  option_default:
     className: "icon-cancel-alt"
     label:     ""
 
   constructor: (@tie, @format)->
-    { @_id, @options, @attr, @name, @current, info } = @format
+    { @_id, @options, @attr, @name, @current, info, option_default } = @format
     @__info = info
     @__uri = Mem.pack[@type]
     @__val = Mem.unpack[@type]
     @tie.do_draw @draw.bind @
+    _.assign @option_default, option_default
 
   draw: ->
     { info, label } = @format
@@ -100,7 +101,7 @@ class basic_input
     if value
       @options?[value] || {}
     else
-      @default_option
+      @option_default
 
   item: (value, m_attr = {})->
     option = @option value
@@ -198,9 +199,9 @@ class InputTie.type.radio extends basic_input
 class InputTie.type.select extends basic_input
   _value: e_value
   _attr:  change_attr
-  default_option:
+  option_default:
     className: ""
-    label:　"ーーー"
+    label:　"―――"
 
   field: (m_attr = {})->
     list =

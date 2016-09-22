@@ -1,0 +1,7 @@
+
+.tmp
+.rbx
+.DS_Store
+.bundle
+node_modules
+bower_components

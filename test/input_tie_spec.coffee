@@ -5,7 +5,7 @@ icon =
   _id: "icon"
   attr:
     type: "icon"
-  label: "アイコン"
+  name: "アイコン"
   current: null
   options:
     cog:   "画面表示を調整します。"
@@ -16,7 +16,7 @@ t1 =
   attr:
     type: "textarea"
     max_line:   2
-  label: "テキスト"
+  name: "テキスト"
   current: "ab\ncd\nef"
 
 t2 =
@@ -24,7 +24,7 @@ t2 =
   attr:
     type: "text"
     maxlength: 6
-  label: "テキスト"
+  name: "テキスト"
   current: "abcdef"
 
 state = {}
@@ -34,9 +34,11 @@ tie.stay = (id, value)->
   state.stay = value
 tie.change = (id, value, old)->
   state.change = value
-tie.bundle icon
-tie.bundle t1
-tie.bundle t2
+bundles = [
+  tie.bundle icon
+  tie.bundle t1
+  tie.bundle t2
+]
 tie.draw()
 
 
@@ -50,7 +52,29 @@ describe "InputTie", ()->
     tie.draw()
     expect( state.do_draw ).to.eq true
 
-describe "InputTie icon", ()->
+  its "bundle results",
+    bundles
+    [
+      _id: "icon"
+      name: "アイコン"
+      attr:
+        type: "icon"
+    ,
+      _id: "t1"
+      name: "テキスト"
+      attr:
+        type: "textarea"
+        max_line: 2
+    ,
+      _id: "t2"
+      name: "テキスト"
+      attr:
+        type: "text"
+        maxlength: 6
+    ]
+
+
+describe "InputTie.type.icon", ()->
   its "option cog",
     tie.input.icon.option "cog"
     _id: "cog"
@@ -66,7 +90,6 @@ describe "InputTie icon", ()->
     label: ""
     "data-tooltip": "選択しない"
 
-
   it "option badge", ->
     tie.input.icon.options.cog.badge = -> 123
     expect( tie.input.icon.item("cog").children[1].children[0] ).to.eq 123
@@ -76,7 +99,7 @@ describe "InputTie icon", ()->
     expect( tie.input.icon.item("cog", { tag:"menuicon" }).tag ).to.eq "a"
     expect( tie.input.icon.item("cog", { tag:"bigicon"  }).tag ).to.eq "section"
 
-describe "InputTie textarea", ()->
+describe "InputTie.type.textarea", ()->
   its "foot",
     tie.input.t1.foot()
     [
@@ -108,7 +131,7 @@ describe "InputTie textarea", ()->
       console.warn msg
 
 
-describe "InputTie text", ()->
+describe "InputTie.type.text", ()->
   its "foot",
     tie.input.t2.foot()
     [

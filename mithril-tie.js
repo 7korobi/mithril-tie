@@ -1,6 +1,6 @@
 /**
  mithril-tie - browser input helper for mithril
- @version v0.0.1
+ @version v0.0.2
  @link https://github.com/7korobi/mithril-tie
  @license 
 **/
@@ -410,7 +410,8 @@
       }
       this.input[_id] = input = new type(this, format);
       Tie.build_input(this.tie, _id, this.params, input);
-      return this.do_change(_id, this.params[_id]);
+      this.do_change(_id, this.params[_id]);
+      return this.input[_id];
     };
 
     InputTie.prototype._submit = function(arg) {

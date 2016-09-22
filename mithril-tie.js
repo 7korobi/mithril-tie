@@ -1,6 +1,6 @@
 /**
  mithril-tie - browser input helper for mithril
- @version v0.0.2
+ @version v0.0.4
  @link https://github.com/7korobi/mithril-tie
  @license 
 **/
@@ -1022,7 +1022,7 @@
       this.__uri = Mem.pack[this.type];
       this.__val = Mem.unpack[this.type];
       this.tie.do_draw(this.draw.bind(this));
-      _.assign(this.option_default, option_default);
+      this.option_default = _.assign({}, this.option_default, option_default);
     }
 
     basic_input.prototype.draw = function() {

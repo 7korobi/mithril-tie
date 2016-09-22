@@ -70,7 +70,7 @@ class basic_input
     @__uri = Mem.pack[@type]
     @__val = Mem.unpack[@type]
     @tie.do_draw @draw.bind @
-    _.assign @option_default, option_default
+    @option_default = _.assign {}, @option_default, option_default
 
   draw: ->
     { info, label } = @format

@@ -10,6 +10,8 @@ icon =
   options:
     cog:   "画面表示を調整します。"
     home:  "村の設定、アナウンスを表示します。"
+  option_default:
+    label: "icon default"
 
 t1 =
   _id: "t1"
@@ -26,6 +28,8 @@ t2 =
     maxlength: 6
   name: "テキスト"
   current: "abcdef"
+  option_default:
+    label: "t2 default"
 
 state = {}
 params = {}
@@ -59,18 +63,24 @@ describe "InputTie", ()->
       name: "アイコン"
       attr:
         type: "icon"
+      option_default:
+        label: "icon default"
     ,
       _id: "t1"
       name: "テキスト"
       attr:
         type: "textarea"
         max_line: 2
+      option_default:
+        label: ""
     ,
       _id: "t2"
       name: "テキスト"
       attr:
         type: "text"
         maxlength: 6
+      option_default:
+        label: "t2 default"
     ]
 
 
@@ -87,7 +97,7 @@ describe "InputTie.type.icon", ()->
 
   its "option (null)",
     tie.input.icon.option null
-    label: ""
+    label: "icon default"
     "data-tooltip": "選択しない"
 
   it "option badge", ->

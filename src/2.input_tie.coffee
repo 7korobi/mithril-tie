@@ -15,21 +15,6 @@ _attr_form = (tie, { attr })->
       false
 
 
-validity_attr =
-  valid: "valid"
-  valueMissing: "required"
-  typeMismatch: "type"
-  patternMismatch: "pattern"
-  rangeUnderflow: "min"
-  rangeOverflow: "max"
-  stepMismatch: "step"
-  tooLines: "max_line"
-  tooLong: "maxlength"
-  tooShort: "minlength"
-  hasSecret: "not_secret"
-  hasPlayer: "not_player"
-
-
 class InputTie
   timeout: 1000
   _debounce: ->
@@ -42,32 +27,39 @@ class InputTie
   _config: (_id)->
     (elem, isNew, context)=>
       if isNew
-        @do_view _id, elem
+        @do_dom _id, elem, context
         context.onunload = =>
-          @do_view _id
+          @do_context _id
+          @do_dom _id
+      @do_context _id, context
 
-  do_view: (id, elem)->
-    if id
-      if elem
-        elem.validity ?=
-          valid: true
-        elem.checkValidity ?= ->
-          @validity.valid
-        elem.setCustomValidity ?= (@validationMessage)->
-          if @validationMessage
-            @validity.customError = true
-            @validity.valid = false
-          else
-            @validity.customError = false
-            @validity.valid = true
 
-      @input[id].do_view elem
-    else
-      @dom = elem
+  do_context: (id, context)->
+    input = @input[id]
+    input.do_context context
+
+  do_dom: (id, elem, context)->
+    input = @input[id]
+    if elem
+      elem.validity ?=
+        valid: true
+      elem.checkValidity ?= ->
+        @validity.valid
+      elem.setCustomValidity ?= (@validationMessage)->
+        if @validationMessage
+          @validity.customError = true
+          @validity.valid = false
+        else
+          @validity.customError = false
+          @validity.valid = true
+
+    input.do_dom elem, context
 
   do_change: (id, value)->
     input = @input[id]
     value = input.__val value
+    input.do_change value
+
     old = @params[id]
     if old == value
       @stay id, value
@@ -75,21 +67,22 @@ class InputTie
       @params[id] = value
       @change id, value, old
 
-    input.do_change value
-
     @disabled = !! @timer
 
   do_fail: (id, value)->
     input = @input[id]
     value = input.__val value
-
     input.do_fail value
 
   do_blur: (id, e)->
+    input = @input[id]
+    input.do_blur e
     @focus id, false
 
   do_focus: (id, e)->
-    @focus id, true, @focus_id
+    input = @input[id]
+    input.do_focus e
+    @focus id, true, @focus_id, @focused
     @focus_id = id
     @focused = @input[id]
 
@@ -141,14 +134,13 @@ class InputTie
     @off()
 
   errors: (cb)->
-    for id, { dom } of @input when dom
-      if dom.validationMessage
-        cb dom.validationMessage
+    for id, { name, dom } of @input when dom?.validationMessage
+      cb dom.validationMessage, name
 
   infos: (cb)->
-    for id, { info_msg } of @input when info_msg
+    for id, { name, info_msg } of @input when info_msg
       if info_msg
-        cb info_msg
+        cb info_msg, name
 
   submit: (children...)->
     tag =  "button.btn"
@@ -172,8 +164,9 @@ class InputTie
     type = type.multiple if attr.multiple
     @input[_id] = input = new type @, format
     Tie.build_input @tie, _id, @params, input
+    input.do_draw()
     @do_change _id, @params[_id]
-    @input[_id]
+    input
 
   _submit: ({@form})->
     attr = {}
@@ -185,7 +178,7 @@ class InputTie
             disabled: @disabled
       else
         (__, attr)->
-          @do_view null, {}
+          @do_dom null, {}
           submit = (e)=>
             @do_submit()
             false

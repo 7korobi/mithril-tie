@@ -1,6 +1,6 @@
 /**
  mithril-tie - browser input helper for mithril
- @version v0.0.4
+ @version v0.0.5
  @link https://github.com/7korobi/mithril-tie
  @license 
 **/
@@ -27,6 +27,8 @@
   };
 
   Tie = (function() {
+    Tie.browser = {};
+
     Tie.types = {
       url: ["protocol", "host", "pathname", "search", "hash", "href"],
       store: ["session", "local", "cookie"]
@@ -131,7 +133,7 @@
 }).call(this);
 
 (function() {
-  var InputTie, Mem, Tie, _, _attr_form, m, submit_pick, validity_attr,
+  var InputTie, Mem, Tie, _, _attr_form, m, submit_pick,
     slice = [].slice;
 
   Mem = require("memory-record");
@@ -161,21 +163,6 @@
     });
   };
 
-  validity_attr = {
-    valid: "valid",
-    valueMissing: "required",
-    typeMismatch: "type",
-    patternMismatch: "pattern",
-    rangeUnderflow: "min",
-    rangeOverflow: "max",
-    stepMismatch: "step",
-    tooLines: "max_line",
-    tooLong: "maxlength",
-    tooShort: "minlength",
-    hasSecret: "not_secret",
-    hasPlayer: "not_player"
-  };
-
   InputTie = (function() {
     InputTie.prototype.timeout = 1000;
 
@@ -194,51 +181,58 @@
       return (function(_this) {
         return function(elem, isNew, context) {
           if (isNew) {
-            _this.do_view(_id, elem);
-            return context.onunload = function() {
-              return _this.do_view(_id);
+            _this.do_dom(_id, elem, context);
+            context.onunload = function() {
+              _this.do_context(_id);
+              return _this.do_dom(_id);
             };
           }
+          return _this.do_context(_id, context);
         };
       })(this);
     };
 
-    InputTie.prototype.do_view = function(id, elem) {
-      if (id) {
-        if (elem) {
-          if (elem.validity == null) {
-            elem.validity = {
-              valid: true
-            };
-          }
-          if (elem.checkValidity == null) {
-            elem.checkValidity = function() {
-              return this.validity.valid;
-            };
-          }
-          if (elem.setCustomValidity == null) {
-            elem.setCustomValidity = function(validationMessage) {
-              this.validationMessage = validationMessage;
-              if (this.validationMessage) {
-                this.validity.customError = true;
-                return this.validity.valid = false;
-              } else {
-                this.validity.customError = false;
-                return this.validity.valid = true;
-              }
-            };
-          }
+    InputTie.prototype.do_context = function(id, context) {
+      var input;
+      input = this.input[id];
+      return input.do_context(context);
+    };
+
+    InputTie.prototype.do_dom = function(id, elem, context) {
+      var input;
+      input = this.input[id];
+      if (elem) {
+        if (elem.validity == null) {
+          elem.validity = {
+            valid: true
+          };
         }
-        return this.input[id].do_view(elem);
-      } else {
-        return this.dom = elem;
+        if (elem.checkValidity == null) {
+          elem.checkValidity = function() {
+            return this.validity.valid;
+          };
+        }
+        if (elem.setCustomValidity == null) {
+          elem.setCustomValidity = function(validationMessage) {
+            this.validationMessage = validationMessage;
+            if (this.validationMessage) {
+              this.validity.customError = true;
+              return this.validity.valid = false;
+            } else {
+              this.validity.customError = false;
+              return this.validity.valid = true;
+            }
+          };
+        }
       }
+      return input.do_dom(elem, context);
     };
 
     InputTie.prototype.do_change = function(id, value) {
       var input, old;
       input = this.input[id];
       value = input.__val(value);
+      input.do_change(value);
       old = this.params[id];
       if (old === value) {
         this.stay(id, value);
@@ -246,7 +240,6 @@
         this.params[id] = value;
         this.change(id, value, old);
       }
-      input.do_change(value);
       return this.disabled = !!this.timer;
     };
 
@@ -258,11 +251,17 @@
     };
 
     InputTie.prototype.do_blur = function(id, e) {
+      var input;
+      input = this.input[id];
+      input.do_blur(e);
       return this.focus(id, false);
     };
 
     InputTie.prototype.do_focus = function(id, e) {
-      this.focus(id, true, this.focus_id);
+      var input;
+      input = this.input[id];
+      input.do_focus(e);
+      this.focus(id, true, this.focus_id, this.focused);
       this.focus_id = id;
       return this.focused = this.input[id];
     };
@@ -338,31 +337,27 @@
     };
 
     InputTie.prototype.errors = function(cb) {
-      var dom, id, ref, results;
+      var dom, id, name, ref, ref1, results;
       ref = this.input;
       results = [];
       for (id in ref) {
-        dom = ref[id].dom;
-        if (dom) {
-          if (dom.validationMessage) {
-            results.push(cb(dom.validationMessage));
-          } else {
-            results.push(void 0);
-          }
+        ref1 = ref[id], name = ref1.name, dom = ref1.dom;
+        if (dom != null ? dom.validationMessage : void 0) {
+          results.push(cb(dom.validationMessage, name));
         }
       }
       return results;
     };
 
     InputTie.prototype.infos = function(cb) {
-      var id, info_msg, ref, results;
+      var id, info_msg, name, ref, ref1, results;
       ref = this.input;
       results = [];
       for (id in ref) {
-        info_msg = ref[id].info_msg;
+        ref1 = ref[id], name = ref1.name, info_msg = ref1.info_msg;
         if (info_msg) {
           if (info_msg) {
-            results.push(cb(info_msg));
+            results.push(cb(info_msg, name));
           } else {
             results.push(void 0);
           }
@@ -410,8 +405,9 @@
       }
       this.input[_id] = input = new type(this, format);
       Tie.build_input(this.tie, _id, this.params, input);
+      input.do_draw();
       this.do_change(_id, this.params[_id]);
-      return this.input[_id];
+      return input;
     };
 
     InputTie.prototype._submit = function(arg) {
@@ -425,7 +421,7 @@
         });
       } : function(__, attr) {
         var submit;
-        this.do_view(null, {});
+        this.do_dom(null, {});
         submit = (function(_this) {
           return function(e) {
             _this.do_submit();
@@ -889,7 +885,7 @@
 }).call(this);
 
 (function() {
-  var InputTie, Mem, _, _attr_label, basic_input, change_attr, e_checked, e_selected, e_value, i, input_attr, input_pick, j, key, len, len1, m, number_input, option_pick, ref, ref1,
+  var InputTie, Mem, _, _attr_label, basic_input, change_attr, e_checked, e_selected, e_value, i, input_attr, input_pick, j, key, len, len1, m, number_input, option_pick, ref, ref1, validity_attr,
     slice = [].slice,
     extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
@@ -931,7 +927,7 @@
     _id = arguments[0], attrs = 2 <= arguments.length ? slice.call(arguments, 1) : [];
     ref = b = this, _value = ref._value, tie = ref.tie;
     return ma = input_pick(attrs, {
-      config: tie._config(_id),
+      config: this._config,
       disabled: tie.disabled,
       onblur: function(e) {
         return tie.do_blur(_id, e);
@@ -956,7 +952,7 @@
     _id = arguments[0], attrs = 2 <= arguments.length ? slice.call(arguments, 1) : [];
     ref = b = this, _value = ref._value, tie = ref.tie;
     return ma = input_pick(attrs, {
-      config: tie._config(_id),
+      config: this._config,
       disabled: tie.disabled,
       onblur: function(e) {
         return tie.do_blur(_id, e);
@@ -995,7 +991,24 @@
     return news;
   };
 
+  validity_attr = {
+    valid: "valid",
+    valueMissing: "required",
+    typeMismatch: "type",
+    patternMismatch: "pattern",
+    rangeUnderflow: "min",
+    rangeOverflow: "max",
+    stepMismatch: "step",
+    tooLines: "max_line",
+    tooLong: "maxlength",
+    tooShort: "minlength",
+    hasSecret: "not_secret",
+    hasPlayer: "not_player"
+  };
+
   basic_input = (function() {
+    basic_input.prototype._config = function() {};
+
     basic_input.prototype._attr_label = _attr_label;
 
     basic_input.prototype._value = e_value;
@@ -1018,19 +1031,13 @@
       this.tie = tie1;
       this.format = format;
       ref = this.format, this._id = ref._id, this.options = ref.options, this.attr = ref.attr, this.name = ref.name, this.current = ref.current, info = ref.info, option_default = ref.option_default;
+      this._config = this.tie._config(this._id);
       this.__info = info;
       this.__uri = Mem.pack[this.type];
       this.__val = Mem.unpack[this.type];
-      this.tie.do_draw(this.draw.bind(this));
+      this.tie.do_draw(this.do_draw.bind(this));
       this.option_default = _.assign({}, this.option_default, option_default);
     }
-
-    basic_input.prototype.draw = function() {
-      var info, label, ref;
-      ref = this.format, info = ref.info, label = ref.label;
-      this.__name = this.attr.name || this._id;
-      return this.__value = this.tie.params[this._id];
-    };
 
     basic_input.prototype.info = function(info_msg) {
       this.info_msg = info_msg != null ? info_msg : "";
@@ -1044,20 +1051,32 @@
       return (ref = this.dom) != null ? ref.setCustomValidity(msg) : void 0;
     };
 
-    basic_input.prototype.do_view = function(dom) {
+    basic_input.prototype.do_context = function(context) {};
+
+    basic_input.prototype.do_dom = function(dom) {
       this.dom = dom;
     };
 
     basic_input.prototype.do_fail = function(value) {};
 
+    basic_input.prototype.do_focus = function() {};
+
+    basic_input.prototype.do_blur = function() {};
+
+    basic_input.prototype.do_draw = function() {
+      var info, label, ref;
+      ref = this.format, info = ref.info, label = ref.label;
+      this.__name = this.attr.name || this._id;
+      return this.__value = this.tie.params[this._id];
+    };
+
     basic_input.prototype.do_change = function(value) {
-      var key, max, max_line, max_sjis, maxlength, min, minlength, msg, not_player, not_secret, pattern, ref, ref1, required, step, type, unit, val;
-      ref = this.attr, not_secret = ref.not_secret, not_player = ref.not_player, unit = ref.unit, max_sjis = ref.max_sjis, max_line = ref.max_line, minlength = ref.minlength, maxlength = ref.maxlength, min = ref.min, max = ref.max, step = ref.step, pattern = ref.pattern, type = ref.type, required = ref.required;
+      var key, msg, ref, val;
       if (this.dom && !this.dom.validity.customError) {
         if (this.format.error) {
-          ref1 = this.dom.validity;
-          for (key in ref1) {
-            val = ref1[key];
+          ref = this.dom.validity;
+          for (key in ref) {
+            val = ref[key];
             if (!(val)) {
               continue;
             }
@@ -1461,7 +1480,7 @@
         css += " " + className;
       }
       return ma = _pick(attrs, {
-        config: tie._config(_id),
+        config: this._config,
         className: css,
         onclick: onchange,
         onmouseup: onchange,
@@ -1771,6 +1790,241 @@
 }).call(this);
 
 (function() {
+  var InputTie, Mem, Tie, _, _pick, browser, capture, m, mouse, ref, touch, touch_A, touch_B,
+    slice = [].slice,
+    extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    hasProp = {}.hasOwnProperty;
+
+  Mem = require("memory-record");
+
+  m = require("mithril");
+
+  _ = require("lodash");
+
+  ref = module.exports, InputTie = ref.InputTie, Tie = ref.Tie;
+
+  capture = function(ctx, e) {
+    var e_touch, rect;
+    ctx.offset = null;
+    ctx.offsets = [];
+    if (!((e != null) && (ctx != null))) {
+      return ctx.offsets;
+    }
+    if (e.touches != null) {
+      rect = ctx.getBoundingClientRect();
+      ctx.offsets = (function() {
+        var i, len, ref1, results;
+        ref1 = e.touches;
+        results = [];
+        for (i = 0, len = ref1.length; i < len; i++) {
+          e_touch = ref1[i];
+          results.push(touch(touch, rect));
+        }
+        return results;
+      })();
+      if (1 === e.touches.length) {
+        ctx.offset = ctx.offsets[0];
+      }
+    } else {
+      ctx.offset = mouse(e);
+      if (ctx.offset != null) {
+        ctx.offsets = [ctx.offset];
+      }
+    }
+    return ctx.history.push(ctx.offsets);
+  };
+
+  mouse = function(event) {
+    var x, y;
+    x = event.offsetX || event.layerX;
+    y = event.offsetY || event.layerY;
+    if ((x != null) && (y != null)) {
+      x *= 2;
+      y *= 2;
+      return [x, y];
+    }
+  };
+
+  touch_A = function(arg, arg1) {
+    var left, pageX, pageY, top, x, y;
+    pageX = arg.pageX, pageY = arg.pageY;
+    left = arg1.left, top = arg1.top;
+    x = 2 * (pageX - left - window.scrollX);
+    y = 2 * (pageY - top - window.scrollY);
+    return [x, y];
+  };
+
+  touch_B = function(arg, arg1) {
+    var left, pageX, pageY, top, x, y;
+    pageX = arg.pageX, pageY = arg.pageY;
+    left = arg1.left, top = arg1.top;
+    x = 2 * (pageX - left);
+    y = 2 * (pageY - top - window.scrollY);
+    return [x, y];
+  };
+
+  touch = touch_B;
+
+  _pick = function(attrs, last) {
+    return _.assignIn.apply(_, [{}].concat(slice.call(attrs), [last]));
+  };
+
+  browser = function() {
+    var chrome, ff, ios, old, ref1;
+    ref1 = Tie.browser, ios = ref1.ios, ff = ref1.ff, old = ref1.old, chrome = ref1.chrome;
+    return touch = ios || ff || old && chrome ? touch_A : touch_B;
+  };
+
+  InputTie.type.canvas = (function(superClass) {
+    extend(canvas, superClass);
+
+    function canvas() {
+      return canvas.__super__.constructor.apply(this, arguments);
+    }
+
+    canvas.prototype.type = "Array";
+
+    canvas.prototype.do_draw = function() {};
+
+    canvas.prototype.do_dom = function(dom) {
+      this.dom = dom;
+    };
+
+    canvas.prototype.do_context = function(ctx1) {
+      this.ctx = ctx1;
+      return this.do_blur();
+    };
+
+    canvas.prototype.do_focus = function(e) {
+      return this.ctx.is_tap = true;
+    };
+
+    canvas.prototype.do_blur = function(e) {
+      this.ctx.is_tap = false;
+      return this.ctx.history = [];
+    };
+
+    canvas.prototype.do_fail = function(offsets) {};
+
+    canvas.prototype.do_change = function(offsets) {};
+
+    canvas.prototype._value = function(e) {
+      return e.offsets;
+    };
+
+    canvas.prototype._attr = function() {
+      var _id, _value, attrs, cancel, ctx, end, ma, move, start, tie;
+      _id = arguments[0], attrs = 2 <= arguments.length ? slice.call(arguments, 1) : [];
+      _value = this._value, tie = this.tie, ctx = this.ctx;
+      start = function(e) {
+        tie.do_focus(_id, e);
+        return move(e);
+      };
+      end = function(e) {
+        move(e);
+        return tie.do_blur(_id, e);
+      };
+      move = function(e) {
+        capture(ctx, e);
+        return tie.do_change(_id, _value(ctx), ma);
+      };
+      cancel = function(e) {
+        capture(ctx, e);
+        tie.do_fail(_id, _value(ctx), ma);
+        return tie.do_blur(_id, e);
+      };
+      return ma = _pick(attrs, {
+        config: this._config,
+        ontouchend: end,
+        ontouchmove: move,
+        ontouchstart: start,
+        ontouchcancel: cancel,
+        onmouseup: end,
+        onmousemove: move,
+        onmousedown: start,
+        onmouseout: end,
+        onmouseover: move
+      });
+    };
+
+    canvas.prototype.field = function(m_attr) {
+      var h, ma, ref1, w;
+      if (m_attr == null) {
+        m_attr = {};
+      }
+      ref1 = m_attr.size || this.attr.size, w = ref1[0], h = ref1[1];
+      ma = this._attr(this._id, this.attr, m_attr, {
+        className: [this.attr.className, m_attr.className].join(" "),
+        width: w,
+        height: h,
+        style: "width: " + (w / 2) + "px; height: " + (h / 2) + "px;"
+      });
+      return m("canvas", ma);
+    };
+
+    return canvas;
+
+  })(InputTie.type.hidden);
+
+}).call(this);
+
+(function() {
+  var InputTie, Mem, Tie, _, m, ref,
+    extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    hasProp = {}.hasOwnProperty;
+
+  Mem = require("memory-record");
+
+  m = require("mithril");
+
+  _ = require("lodash");
+
+  ref = module.exports, InputTie = ref.InputTie, Tie = ref.Tie;
+
+  InputTie.type.timeline = (function(superClass) {
+    extend(timeline, superClass);
+
+    function timeline() {
+      return timeline.__super__.constructor.apply(this, arguments);
+    }
+
+    timeline.prototype.type = "Array";
+
+    timeline.prototype.do_draw = function() {};
+
+    timeline.prototype.do_dom = function(dom, ctx) {
+      this.dom = dom;
+    };
+
+    timeline.prototype.do_context = function(ctx1) {
+      this.ctx = ctx1;
+      return this.do_blur();
+    };
+
+    timeline.prototype.do_focus = function(e) {
+      return this.ctx.is_tap = true;
+    };
+
+    timeline.prototype.do_blur = function(e) {
+      this.ctx.is_tap = false;
+      return this.ctx.history = [];
+    };
+
+    timeline.prototype.do_fail = function(offsets) {};
+
+    timeline.prototype.do_change = function(offsets) {};
+
+    timeline.prototype._value = function(e) {
+      return e.offsets;
+    };
+
+    return timeline;
+
+  })(InputTie.type.canvas);
+
+}).call(this);
+
+(function() {
   var InputTie, _, i, key, len, m, ref, text_input, text_point,
     extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
@@ -1797,7 +2051,7 @@
       return text_input.__super__.constructor.apply(this, arguments);
     }
 
-    text_input.prototype.draw = function() {
+    text_input.prototype.do_draw = function() {
       var line, point, size, sjis, unit;
       unit = this.attr.unit;
       this.__name = this.attr.name || this._id;
@@ -1817,8 +2071,9 @@
     };
 
     text_input.prototype.do_change = function(value) {
-      var error, max_line, max_sjis, maxlength, minlength, not_player, not_secret, pattern, ref, ref1, required, unit;
+      var error, line, max_line, max_sjis, maxlength, minlength, not_player, not_secret, pattern, ref, ref1, ref2, required, sjis, unit;
       ref = this.attr, not_secret = ref.not_secret, not_player = ref.not_player, unit = ref.unit, max_sjis = ref.max_sjis, max_line = ref.max_line, minlength = ref.minlength, maxlength = ref.maxlength, pattern = ref.pattern, required = ref.required;
+      ref1 = this.calc, line = ref1.line, sjis = ref1.sjis;
       if (this.dom) {
         if (not_secret && value.match(/>>[\=\*\!]\d+/g)) {
           error = "あぶない！秘密会話へのアンカーがあります！";
@@ -1832,7 +2087,7 @@
         if (max_sjis && max_sjis < sjis) {
           error = "このテキストを " + max_sjis + " 文字以下にしてください。";
         }
-        if (minlength && (0 < (ref1 = value.length) && ref1 < minlength)) {
+        if (minlength && (0 < (ref2 = value.length) && ref2 < minlength)) {
           if (!InputTie.skip_minlength) {
             error = "このテキストは " + minlength + " 文字以上で指定してください（現在は " + value.length + " 文字です）。";
           }

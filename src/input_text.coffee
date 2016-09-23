@@ -10,7 +10,7 @@ text_point = (size)->
 
 
 class text_input extends InputTie.type.hidden
-  draw: ->
+  do_draw: ->
     { unit } = @attr
     @__name = @attr.name || @_id
     @__value = @tie.params[@_id]
@@ -23,6 +23,7 @@ class text_input extends InputTie.type.hidden
 
   do_change: (value)->
     { not_secret, not_player, unit, max_sjis, max_line, minlength, maxlength, pattern, required } = @attr
+    { line, sjis } = @calc
     if @dom
       if not_secret && value.match />>[\=\*\!]\d+/g
         error = "あぶない！秘密会話へのアンカーがあります！"

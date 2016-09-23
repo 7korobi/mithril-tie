@@ -9,6 +9,7 @@ memory_prop = (params, key, unpack)->
 
 
 class Tie
+  @browser = {}
   @types =
     url: ["protocol", "host", "pathname", "search", "hash", "href"]
     store: ["session", "local", "cookie"]

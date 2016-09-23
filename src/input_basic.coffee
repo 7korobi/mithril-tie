@@ -22,7 +22,7 @@ _attr_label = ( _id, attrs...)->
 change_attr = ( _id, attrs... )->
   { _value, tie } = b = @
   ma = input_pick attrs,
-    config: tie._config _id
+    config: @_config
     disabled: tie.disabled
     onblur:     (e)-> tie.do_blur   _id, e
     onfocus:    (e)-> tie.do_focus  _id, e
@@ -33,7 +33,7 @@ change_attr = ( _id, attrs... )->
 input_attr = ( _id, attrs... )->
   { _value, tie } = b = @
   ma = input_pick attrs,
-    config: tie._config _id
+    config: @_config
     disabled: tie.disabled
     onblur:    (e)-> tie.do_blur   _id, e
     onfocus:   (e)-> tie.do_focus  _id, e
@@ -52,7 +52,23 @@ e_selected  = (e)->
   news
 
 
+validity_attr =
+  valid: "valid"
+  valueMissing: "required"
+  typeMismatch: "type"
+  patternMismatch: "pattern"
+  rangeUnderflow: "min"
+  rangeOverflow: "max"
+  stepMismatch: "step"
+  tooLines: "max_line"
+  tooLong: "maxlength"
+  tooShort: "minlength"
+  hasSecret: "not_secret"
+  hasPlayer: "not_player"
+
+
 class basic_input
+  _config: ->
   _attr_label: _attr_label
   _value: e_value
   _attr:  input_attr
@@ -66,28 +82,28 @@ class basic_input
 
   constructor: (@tie, @format)->
     { @_id, @options, @attr, @name, @current, info, option_default } = @format
+    @_config = @tie._config @_id
     @__info = info
     @__uri = Mem.pack[@type]
     @__val = Mem.unpack[@type]
-    @tie.do_draw @draw.bind @
-    @option_default = _.assign {}, @option_default, option_default
 
-  draw: ->
-    { info, label } = @format
-    @__name = @attr.name || @_id
-    @__value = @tie.params[@_id]
+    @tie.do_draw @do_draw.bind @
+    @option_default = _.assign {}, @option_default, option_default
 
   info: (@info_msg = "")->
   error: (msg = "")->
     @dom?.setCustomValidity msg
 
-  do_view: (@dom)->
-
+  do_context: (context)->
+  do_dom: (@dom)->
   do_fail: (value)->
-
+  do_focus: ->
+  do_blur: ->
+  do_draw: ->
+    { info, label } = @format
+    @__name = @attr.name || @_id
+    @__value = @tie.params[@_id]
   do_change: (value)->
-    { not_secret, not_player, unit, max_sjis, max_line, minlength, maxlength, min, max, step, pattern, type, required } = @attr
-
     if @dom && ! @dom.validity.customError
       # @dom.validity.checkValidity()
       if @format.error

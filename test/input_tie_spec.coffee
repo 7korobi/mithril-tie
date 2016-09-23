@@ -18,7 +18,7 @@ t1 =
   attr:
     type: "textarea"
     max_line:   2
-  name: "テキスト"
+  name: "テキスト1"
   current: "ab\ncd\nef"
 
 t2 =
@@ -26,10 +26,19 @@ t2 =
   attr:
     type: "text"
     maxlength: 6
-  name: "テキスト"
+  name: "テキスト2"
   current: "abcdef"
   option_default:
     label: "t2 default"
+
+canvas =
+  _id: "canvas"
+  attr:
+    type: "canvas"
+    size: [ 800, 600 ]
+  name: "裸のキャンバス"
+  current: null
+
 
 state = {}
 params = {}
@@ -42,13 +51,14 @@ bundles = [
   tie.bundle icon
   tie.bundle t1
   tie.bundle t2
+  tie.bundle canvas
 ]
 tie.draw()
 
 
 describe "InputTie", ()->
   it "input list", ->
-    expect( Object.keys tie.input ).to.have.members ["icon", "t1", "t2"]
+    expect( Object.keys tie.input ).to.have.members ["icon", "t1", "t2", "canvas"]
 
   it "draw", ->
     state = {}
@@ -67,7 +77,7 @@ describe "InputTie", ()->
         label: "icon default"
     ,
       _id: "t1"
-      name: "テキスト"
+      name: "テキスト1"
       attr:
         type: "textarea"
         max_line: 2
@@ -75,7 +85,7 @@ describe "InputTie", ()->
         label: ""
     ,
       _id: "t2"
-      name: "テキスト"
+      name: "テキスト2"
       attr:
         type: "text"
         maxlength: 6
@@ -84,7 +94,7 @@ describe "InputTie", ()->
     ]
 
 
-describe "InputTie.type.icon", ()->
+describe "InputTie.type.icon", ->
   its "option cog",
     tie.input.icon.option "cog"
     _id: "cog"
@@ -109,6 +119,7 @@ describe "InputTie.type.icon", ()->
     expect( tie.input.icon.item("cog", { tag:"menuicon" }).tag ).to.eq "a"
     expect( tie.input.icon.item("cog", { tag:"bigicon"  }).tag ).to.eq "section"
 
+
 describe "InputTie.type.textarea", ()->
   its "foot",
     tie.input.t1.foot()
@@ -123,25 +134,42 @@ describe "InputTie.type.textarea", ()->
     ]
 
   it "over max_line", ->
+    vdom = tie.input.t1.field()
+    elem = {}
     state = {}
+    context = {}
+    vdom.attrs.config elem, true, context
+    tie.do_focus  "t1", {}
     tie.do_change "t1", "ab\ncd\nef"
+    vdom.attrs.config elem, false, context
+    tie.do_blur   "t1", {}
+
     expect( params.t1 ).to.eq "ab\ncd\nef"
     expect( state.stay ).to.eq "ab\ncd\nef"
     expect( state.change ).to.eq undefined
+
     tie.errors (msg)->
       console.warn msg
 
   it "in max_line", ->
+    vdom = tie.input.t1.field()
+    elem = {}
     state = {}
+    context = {}
+    vdom.attrs.config elem, true, context
+    tie.do_focus  "t1", {}
     tie.do_change "t1", "abcdef"
+    vdom.attrs.config elem, false, context
+    tie.do_blur   "t1", {}
+
     expect( params.t1 ).to.eq "abcdef"
-    expect( state.change ).to.eq "abcdef"
     expect( state.stay ).to.eq undefined
-    tie.errors (msg)->
-      console.warn msg
+    expect( state.change ).to.eq "abcdef"
+    tie.errors (msg, name)->
+      console.warn [name, msg]
 
 
-describe "InputTie.type.text", ()->
+describe "InputTie.type.text", ->
   its "foot",
     tie.input.t2.foot()
     [
@@ -155,12 +183,51 @@ describe "InputTie.type.text", ()->
     ]
 
   it "over size", ->
+    vdom = tie.input.t2.field()
+    elem = {}
     state = {}
+    context = {}
+    vdom.attrs.config elem, true, context
+    tie.do_focus  "t2", {}
     tie.do_change "t2", "abcdefg"
+    vdom.attrs.config elem, false, context
+    tie.do_blur   "t2", {}
+
     expect( params.t2 ).to.eq "abcdefg"
-    expect( state.change ).to.eq "abcdefg"
     expect( state.stay ).to.eq undefined
-    tie.errors (msg)->
-      console.warn msg
+    expect( state.change ).to.eq "abcdefg"
+    tie.errors (msg, name)->
+      console.warn [name, msg]
 
 
+describe "InputTie.type.canvas", ->
+  its "field",
+    tie.input.canvas.field()
+    attrs:
+      width:  800
+      height: 600
+      style: "width: 400px; height: 300px;"
+
+  its "field custom",
+    tie.input.canvas.field(size: [100, 100])
+    attrs:
+      width:  100
+      height: 100
+      style: "width: 50px; height: 50px;"
+
+  it "show and do", ->
+    vdom = tie.input.canvas.field()
+    elem = {}
+    state = {}
+    context = {}
+    vdom.attrs.config elem, true, context
+    tie.do_focus  "canvas", {}
+    tie.do_change "canvas", [[10,20]]
+    vdom.attrs.config elem, false, context
+    tie.do_blur   "canvas", {}
+
+    expect( params.canvas ).to.deep.eq [[10,20]]
+    expect( state.stay ).to.eq undefined
+    expect( state.change ).to.deep.eq [[10,20]]
+    tie.errors (msg, name)->
+      console.warn [name, msg]

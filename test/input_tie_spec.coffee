@@ -134,15 +134,16 @@ describe "InputTie.type.textarea", ()->
     ]
 
   it "over max_line", ->
-    vdom = tie.input.t1.field()
+    input = tie.input.t1
     elem = {}
     state = {}
     context = {}
+    vdom = input.field()
     vdom.attrs.config elem, true, context
-    tie.do_focus  "t1", {}
-    tie.do_change "t1", "ab\ncd\nef"
+    tie.do_focus  input, {}
+    tie.do_change input, "ab\ncd\nef"
     vdom.attrs.config elem, false, context
-    tie.do_blur   "t1", {}
+    tie.do_blur   input, {}
 
     expect( params.t1 ).to.eq "ab\ncd\nef"
     expect( state.stay ).to.eq "ab\ncd\nef"
@@ -152,15 +153,16 @@ describe "InputTie.type.textarea", ()->
       console.warn msg
 
   it "in max_line", ->
-    vdom = tie.input.t1.field()
+    input = tie.input.t1
     elem = {}
     state = {}
     context = {}
+    vdom = input.field()
     vdom.attrs.config elem, true, context
-    tie.do_focus  "t1", {}
-    tie.do_change "t1", "abcdef"
+    tie.do_focus  input, {}
+    tie.do_change input, "abcdef"
     vdom.attrs.config elem, false, context
-    tie.do_blur   "t1", {}
+    tie.do_blur   input, {}
 
     expect( params.t1 ).to.eq "abcdef"
     expect( state.stay ).to.eq undefined
@@ -183,15 +185,16 @@ describe "InputTie.type.text", ->
     ]
 
   it "over size", ->
-    vdom = tie.input.t2.field()
+    input = tie.input.t2
     elem = {}
     state = {}
     context = {}
+    vdom = input.field()
     vdom.attrs.config elem, true, context
-    tie.do_focus  "t2", {}
-    tie.do_change "t2", "abcdefg"
+    tie.do_focus  input, {}
+    tie.do_change input, "abcdefg"
     vdom.attrs.config elem, false, context
-    tie.do_blur   "t2", {}
+    tie.do_blur   input, {}
 
     expect( params.t2 ).to.eq "abcdefg"
     expect( state.stay ).to.eq undefined
@@ -216,15 +219,25 @@ describe "InputTie.type.canvas", ->
       style: "width: 50px; height: 50px;"
 
   it "show and do", ->
-    vdom = tie.input.canvas.field()
-    elem = {}
+    input = tie.input.canvas
     state = {}
     context = {}
+    vdom = input.field()
+    elem =
+      getContext: ->
+        image = null
+        putImageData: (new_img, x, y)->
+          expect( x ).to.eq 0
+          expect( y ).to.eq 0
+          expect( image ).to.deep.eq new_img
+        getImageData: (x, y, w, h)->
+          image = [x,y,w,h]
+
     vdom.attrs.config elem, true, context
-    tie.do_focus  "canvas", {}
-    tie.do_change "canvas", [[10,20]]
+    tie.do_focus  input, {}
+    tie.do_change input, [[10,20]]
     vdom.attrs.config elem, false, context
-    tie.do_blur   "canvas", {}
+    tie.do_blur   input, {}
 
     expect( params.canvas ).to.deep.eq [[10,20]]
     expect( state.stay ).to.eq undefined

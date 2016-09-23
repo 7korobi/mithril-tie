@@ -45,7 +45,7 @@ class text_input extends InputTie.type.hidden
     super
 
   foot: (m_attr = {})->
-    ma = @_attr_label @_id, @attr, m_attr
+    ma = @_attr_label @attr, m_attr
     size = @calc.size
 
     if ma.maxlength
@@ -75,7 +75,7 @@ class text_input extends InputTie.type.hidden
 
 class InputTie.type.textarea extends text_input
   field: (m_attr = {})->
-    ma = @_attr @_id, @attr, m_attr,
+    ma = @_attr @attr, m_attr,
       className: [@attr.className, m_attr.className].join(" ")
       name:  @__name
     # data-tooltip, disabled

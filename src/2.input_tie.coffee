@@ -24,23 +24,12 @@ class InputTie
         ng "reset #{ @timeout }ms "
       , @timeout
 
-  _config: (_id)->
+  _config: (input)->
     (elem, isNew, context)=>
-      if isNew
-        @do_dom _id, elem, context
-        context.onunload = =>
-          @do_context _id
-          @do_dom _id
-      @do_context _id, context
+      @config input, elem, isNew, context
 
-
-  do_context: (id, context)->
-    input = @input[id]
-    input.do_context context
-
-  do_dom: (id, elem, context)->
-    input = @input[id]
-    if elem
+  config: (input, elem, isNew, context)->
+    if isNew
       elem.validity ?=
         valid: true
       elem.checkValidity ?= ->
@@ -53,13 +42,13 @@ class InputTie
           @validity.customError = false
           @validity.valid = true
 
-    input.do_dom elem, context
+    input.config elem, isNew, context
 
-  do_change: (id, value)->
-    input = @input[id]
+  do_change: (input, value)->
     value = input.__val value
     input.do_change value
 
+    id = input._id
     old = @params[id]
     if old == value
       @stay id, value
@@ -69,28 +58,27 @@ class InputTie
 
     @disabled = !! @timer
 
-  do_fail: (id, value)->
-    input = @input[id]
+  do_fail: (input, value)->
     value = input.__val value
     input.do_fail value
 
-  do_blur: (id, e)->
-    input = @input[id]
+  do_blur: (input, e)->
     input.do_blur e
+    id = input._id
     @focus id, false
 
-  do_focus: (id, e)->
-    input = @input[id]
+  do_focus: (input, e)->
     input.do_focus e
+    id = input._id
     @focus id, true, @focus_id, @focused
     @focus_id = id
-    @focused = @input[id]
+    @focused = input
 
-  do_select: (id, e)->
+  do_select: (input, e)->
     s = getSelection()
     { anchorOffset, focusOffset } = s
     offsets = [anchorOffset, focusOffset].sort()
-    @select id, s.toString(), offsets
+    @select input, s.toString(), offsets
 
   do_submit: ->
     return if @timer
@@ -165,7 +153,7 @@ class InputTie
     @input[_id] = input = new type @, format
     Tie.build_input @tie, _id, @params, input
     input.do_draw()
-    @do_change _id, @params[_id]
+    @do_change input, @params[_id]
     input
 
   _submit: ({@form})->

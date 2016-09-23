@@ -177,31 +177,16 @@
       })(this));
     };
 
-    InputTie.prototype._config = function(_id) {
+    InputTie.prototype._config = function(input) {
       return (function(_this) {
         return function(elem, isNew, context) {
-          if (isNew) {
-            _this.do_dom(_id, elem, context);
-            context.onunload = function() {
-              _this.do_context(_id);
-              return _this.do_dom(_id);
-            };
-          }
-          return _this.do_context(_id, context);
+          return _this.config(input, elem, isNew, context);
         };
       })(this);
     };
 
-    InputTie.prototype.do_context = function(id, context) {
-      var input;
-      input = this.input[id];
-      return input.do_context(context);
-    };
-
-    InputTie.prototype.do_dom = function(id, elem, context) {
-      var input;
-      input = this.input[id];
-      if (elem) {
+    InputTie.prototype.config = function(input, elem, isNew, context) {
+      if (isNew) {
         if (elem.validity == null) {
           elem.validity = {
             valid: true
@@ -225,14 +210,14 @@
           };
         }
       }
-      return input.do_dom(elem, context);
+      return input.config(elem, isNew, context);
     };
 
-    InputTie.prototype.do_change = function(id, value) {
-      var input, old;
-      input = this.input[id];
+    InputTie.prototype.do_change = function(input, value) {
+      var id, old;
       value = input.__val(value);
       input.do_change(value);
+      id = input._id;
       old = this.params[id];
       if (old === value) {
         this.stay(id, value);
@@ -243,35 +228,33 @@
       return this.disabled = !!this.timer;
     };
 
-    InputTie.prototype.do_fail = function(id, value) {
-      var input;
-      input = this.input[id];
+    InputTie.prototype.do_fail = function(input, value) {
       value = input.__val(value);
       return input.do_fail(value);
     };
 
-    InputTie.prototype.do_blur = function(id, e) {
-      var input;
-      input = this.input[id];
+    InputTie.prototype.do_blur = function(input, e) {
+      var id;
       input.do_blur(e);
+      id = input._id;
       return this.focus(id, false);
     };
 
-    InputTie.prototype.do_focus = function(id, e) {
-      var input;
-      input = this.input[id];
+    InputTie.prototype.do_focus = function(input, e) {
+      var id;
       input.do_focus(e);
+      id = input._id;
       this.focus(id, true, this.focus_id, this.focused);
       this.focus_id = id;
-      return this.focused = this.input[id];
+      return this.focused = input;
     };
 
-    InputTie.prototype.do_select = function(id, e) {
+    InputTie.prototype.do_select = function(input, e) {
       var anchorOffset, focusOffset, offsets, s;
       s = getSelection();
       anchorOffset = s.anchorOffset, focusOffset = s.focusOffset;
       offsets = [anchorOffset, focusOffset].sort();
-      return this.select(id, s.toString(), offsets);
+      return this.select(input, s.toString(), offsets);
     };
 
     InputTie.prototype.do_submit = function() {
@@ -406,7 +389,7 @@
       this.input[_id] = input = new type(this, format);
       Tie.build_input(this.tie, _id, this.params, input);
       input.do_draw();
-      this.do_change(_id, this.params[_id]);
+      this.do_change(input, this.params[_id]);
       return input;
     };
 
@@ -917,57 +900,57 @@
   };
 
   _attr_label = function() {
-    var _id, attrs;
-    _id = arguments[0], attrs = 2 <= arguments.length ? slice.call(arguments, 1) : [];
+    var attrs;
+    attrs = 1 <= arguments.length ? slice.call(arguments, 0) : [];
     return _.assignIn.apply(_, attrs);
   };
 
   change_attr = function() {
-    var _id, _value, attrs, b, ma, ref, tie;
-    _id = arguments[0], attrs = 2 <= arguments.length ? slice.call(arguments, 1) : [];
+    var _value, attrs, b, ma, ref, tie;
+    attrs = 1 <= arguments.length ? slice.call(arguments, 0) : [];
     ref = b = this, _value = ref._value, tie = ref.tie;
     return ma = input_pick(attrs, {
       config: this._config,
       disabled: tie.disabled,
       onblur: function(e) {
-        return tie.do_blur(_id, e);
+        return tie.do_blur(b, e);
       },
       onfocus: function(e) {
-        return tie.do_focus(_id, e);
+        return tie.do_focus(b, e);
       },
       onselect: function(e) {
-        return tie.do_select(_id, e);
+        return tie.do_select(b, e);
       },
       onchange: function(e) {
-        return tie.do_change(_id, _value(e), ma);
+        return tie.do_change(b, _value(e), ma);
       },
       oninvalid: function(e) {
-        return tie.do_fail(_id, _value(e), ma);
+        return tie.do_fail(b, _value(e), ma);
       }
     });
   };
 
   input_attr = function() {
-    var _id, _value, attrs, b, ma, ref, tie;
-    _id = arguments[0], attrs = 2 <= arguments.length ? slice.call(arguments, 1) : [];
+    var _value, attrs, b, ma, ref, tie;
+    attrs = 1 <= arguments.length ? slice.call(arguments, 0) : [];
     ref = b = this, _value = ref._value, tie = ref.tie;
     return ma = input_pick(attrs, {
       config: this._config,
       disabled: tie.disabled,
       onblur: function(e) {
-        return tie.do_blur(_id, e);
+        return tie.do_blur(b, e);
       },
       onfocus: function(e) {
-        return tie.do_focus(_id, e);
+        return tie.do_focus(b, e);
       },
       onselect: function(e) {
-        return tie.do_select(_id, e);
+        return tie.do_select(b, e);
       },
       oninput: function(e) {
-        return tie.do_change(_id, _value(e), ma);
+        return tie.do_change(b, _value(e), ma);
       },
       oninvalid: function(e) {
-        return tie.do_fail(_id, _value(e), ma);
+        return tie.do_fail(b, _value(e), ma);
       }
     });
   };
@@ -1007,8 +990,6 @@
   };
 
   basic_input = (function() {
-    basic_input.prototype._config = function() {};
-
     basic_input.prototype._attr_label = _attr_label;
 
     basic_input.prototype._value = e_value;
@@ -1031,13 +1012,17 @@
       this.tie = tie1;
       this.format = format;
       ref = this.format, this._id = ref._id, this.options = ref.options, this.attr = ref.attr, this.name = ref.name, this.current = ref.current, info = ref.info, option_default = ref.option_default;
-      this._config = this.tie._config(this._id);
+      this._config = this.tie._config(this);
       this.__info = info;
       this.__uri = Mem.pack[this.type];
       this.__val = Mem.unpack[this.type];
       this.tie.do_draw(this.do_draw.bind(this));
       this.option_default = _.assign({}, this.option_default, option_default);
     }
+
+    basic_input.prototype.config = function(dom, isNew, context) {
+      this.dom = dom;
+    };
 
     basic_input.prototype.info = function(info_msg) {
       this.info_msg = info_msg != null ? info_msg : "";
@@ -1049,12 +1034,6 @@
         msg = "";
       }
       return (ref = this.dom) != null ? ref.setCustomValidity(msg) : void 0;
-    };
-
-    basic_input.prototype.do_context = function(context) {};
-
-    basic_input.prototype.do_dom = function(dom) {
-      this.dom = dom;
     };
 
     basic_input.prototype.do_fail = function(value) {};
@@ -1155,7 +1134,7 @@
         if (info.valid && this.__value) {
           text = info.valid;
         }
-        ma = this._attr_label(this._id, m_attr, this.format.label.attr);
+        ma = this._attr_label(m_attr, this.format.label.attr);
         return m("label", ma, text);
       }
     };
@@ -1165,7 +1144,7 @@
       if (m_attr == null) {
         m_attr = {};
       }
-      ma = this._attr(this._id, this.attr, m_attr, {
+      ma = this._attr(this.attr, m_attr, {
         className: [this.attr.className, m_attr.className].join(" "),
         name: this.__name,
         value: this.__value
@@ -1227,7 +1206,7 @@
         m_attr = {};
       }
       option = this.option(this.__value);
-      ma = this._attr(this._id, this.attr, m_attr, {
+      ma = this._attr(this.attr, m_attr, {
         className: [this.attr.className, m_attr.className].join(" "),
         type: "checkbox",
         name: this.__name,
@@ -1281,7 +1260,7 @@
         m_attr = {};
       }
       option = this.option(value);
-      ma = this._attr(this._id, this.attr, m_attr, option, {
+      ma = this._attr(this.attr, m_attr, option, {
         className: [this.attr.className, option.className, m_attr.className].join(" "),
         type: "radio",
         name: this.__name,
@@ -1331,7 +1310,7 @@
       if (!(this.attr.required && this.format.current)) {
         list.unshift(this.item("", m_attr));
       }
-      ma = this._attr(this._id, this.attr, m_attr, {
+      ma = this._attr(this.attr, m_attr, {
         className: [this.attr.className, m_attr.className].join(" "),
         name: this.__name
       });
@@ -1358,7 +1337,7 @@
       if (m_attr == null) {
         m_attr = {};
       }
-      ma = this._attr(this._id, this.attr, m_attr, {
+      ma = this._attr(this.attr, m_attr, {
         className: [this.attr.className, m_attr.className].join(" "),
         name: this.__name
       });
@@ -1453,7 +1432,7 @@
 
     btn_input.prototype._attr = function() {
       var _id, attrs, b, className, css, disabled, i, last, ma, onchange, ref, selected, target, tie, value;
-      _id = arguments[0], attrs = 3 <= arguments.length ? slice.call(arguments, 1, i = arguments.length - 1) : (i = 1, []), last = arguments[i++];
+      attrs = 2 <= arguments.length ? slice.call(arguments, 0, i = arguments.length - 1) : (i = 0, []), last = arguments[i++];
       ref = b = this, _id = ref._id, tie = ref.tie;
       className = last.className, disabled = last.disabled, selected = last.selected, value = last.value, target = last.target;
       onchange = function() {
@@ -1464,9 +1443,9 @@
           return b.timer = null;
         });
         value = b._value(selected, value, target);
-        tie.do_change(_id, value, ma);
+        tie.do_change(b, value, ma);
         if (!b.dom.validity.valid) {
-          return tie.do_fail(_id, value, ma);
+          return tie.do_fail(b, value, ma);
         }
       };
       css = "btn";
@@ -1533,7 +1512,7 @@
       }
       next = this.__value;
       option = this.option(next);
-      ma = this._attr(this._id, this.attr, m_attr, {
+      ma = this._attr(this.attr, m_attr, {
         className: [this.attr.className, m_attr.className].join(" "),
         value: next
       });
@@ -1567,7 +1546,7 @@
         m_attr = {};
       }
       option = this.option(this.__value);
-      ma = this._attr(this._id, this.attr, m_attr, {
+      ma = this._attr(this.attr, m_attr, {
         className: [this.attr.className, m_attr.className].join(" "),
         selected: this.__value,
         value: this.__value
@@ -1624,7 +1603,7 @@
       }
       option = this.option(value);
       tag = m_attr.tag || "menuicon";
-      ma = this._attr(this._id, this.attr, m_attr, option, {
+      ma = this._attr(this.attr, m_attr, option, {
         className: [this.attr.className, m_attr.className, option.className].join(" "),
         selected: value === this.__value,
         value: value
@@ -1664,7 +1643,7 @@
         m_attr = {};
       }
       option = this.option(value);
-      ma = this._attr(this._id, this.attr, m_attr, option, {
+      ma = this._attr(this.attr, m_attr, option, {
         className: [this.attr.className, option.className, m_attr.className].join(" "),
         selected: value === this.__value,
         value: value
@@ -1714,7 +1693,7 @@
         m_attr = {};
       }
       option = this.option(value);
-      ma = this._attr(this._id, this.attr, m_attr, option, {
+      ma = this._attr(this.attr, m_attr, option, {
         className: [this.attr.className, option.className, m_attr.className].join(" "),
         selected: this.__value[value],
         value: this.__value[value]
@@ -1768,7 +1747,7 @@
         m_attr = {};
       }
       option = this.option(target);
-      ma = this._attr(this._id, this.attr, m_attr, option, {
+      ma = this._attr(this.attr, m_attr, option, {
         className: [this.attr.className, option.className, m_attr.className].join(" "),
         target: target,
         value: this.__value
@@ -1790,7 +1769,7 @@
 }).call(this);
 
 (function() {
-  var InputTie, Mem, Tie, _, _pick, browser, capture, m, mouse, ref, touch, touch_A, touch_B,
+  var InputTie, Mem, OBJ, Tie, _, _pick, browser, capture, m, mouse, ref, touch, touch_A, touch_B,
     slice = [].slice,
     extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
@@ -1802,6 +1781,10 @@
   _ = require("lodash");
 
   ref = module.exports, InputTie = ref.InputTie, Tie = ref.Tie;
+
+  OBJ = function() {
+    return new Object(null);
+  };
 
   capture = function(ctx, e) {
     var e_touch, rect;
@@ -1884,16 +1867,35 @@
 
     canvas.prototype.type = "Array";
 
-    canvas.prototype.do_draw = function() {};
-
-    canvas.prototype.do_dom = function(dom) {
+    canvas.prototype.config = function(dom, isNew, ctx1) {
+      var base, draw, h, image, ref1, ref2, size, w;
       this.dom = dom;
-    };
-
-    canvas.prototype.do_context = function(ctx1) {
       this.ctx = ctx1;
+      if (isNew) {
+        this.data = {};
+        this.ctx.draw = this.dom.getContext("2d");
+      }
+      ref1 = this.ctx.size = [this.dom.width, this.dom.height], w = ref1[0], h = ref1[1];
+      ref2 = this.ctx, draw = ref2.draw, size = ref2.size;
+      if (this.data) {
+        if ((base = this.data).canvas == null) {
+          base.canvas = OBJ();
+        }
+        if (image = this.data.canvas[size]) {
+          draw.putImageData(image, 0, 0);
+          return;
+        }
+      }
+      this.do_background();
+      if (this.data) {
+        this.data.canvas[size] = draw.getImageData(0, 0, w * 2, h * 2);
+      }
       return this.do_blur();
     };
+
+    canvas.prototype.do_background = function() {};
+
+    canvas.prototype.do_draw = function() {};
 
     canvas.prototype.do_focus = function(e) {
       return this.ctx.is_tap = true;
@@ -1913,25 +1915,25 @@
     };
 
     canvas.prototype._attr = function() {
-      var _id, _value, attrs, cancel, ctx, end, ma, move, start, tie;
-      _id = arguments[0], attrs = 2 <= arguments.length ? slice.call(arguments, 1) : [];
-      _value = this._value, tie = this.tie, ctx = this.ctx;
+      var _value, attrs, b, cancel, ctx, end, ma, move, ref1, start, tie;
+      attrs = 1 <= arguments.length ? slice.call(arguments, 0) : [];
+      ref1 = b = this, _value = ref1._value, tie = ref1.tie, ctx = ref1.ctx;
       start = function(e) {
-        tie.do_focus(_id, e);
+        tie.do_focus(b, e);
         return move(e);
       };
       end = function(e) {
         move(e);
-        return tie.do_blur(_id, e);
+        return tie.do_blur(b, e);
       };
       move = function(e) {
         capture(ctx, e);
-        return tie.do_change(_id, _value(ctx), ma);
+        return tie.do_change(b, _value(ctx), ma);
       };
       cancel = function(e) {
         capture(ctx, e);
-        tie.do_fail(_id, _value(ctx), ma);
-        return tie.do_blur(_id, e);
+        tie.do_fail(b, _value(ctx), ma);
+        return tie.do_blur(b, e);
       };
       return ma = _pick(attrs, {
         config: this._config,
@@ -1953,7 +1955,7 @@
         m_attr = {};
       }
       ref1 = m_attr.size || this.attr.size, w = ref1[0], h = ref1[1];
-      ma = this._attr(this._id, this.attr, m_attr, {
+      ma = this._attr(this.attr, m_attr, {
         className: [this.attr.className, m_attr.className].join(" "),
         width: w,
         height: h,
@@ -1969,7 +1971,7 @@
 }).call(this);
 
 (function() {
-  var InputTie, Mem, Tie, _, m, ref,
+  var InputTie, Mem, OBJ, Tie, _, m, mestype_orders, ref, timespan,
     extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
 
@@ -1980,6 +1982,14 @@
   _ = require("lodash");
 
   ref = module.exports, InputTie = ref.InputTie, Tie = ref.Tie;
+
+  OBJ = function() {
+    return new Object(null);
+  };
+
+  timespan = 1000 * 3600;
+
+  mestype_orders = ["SAY", "MSAY", "VSAY", "VGSAY", "GSAY", "SPSAY", "WSAY", "XSAY", "BSAY", "AIM", "TSAY", "MAKER", "ADMIN"];
 
   InputTie.type.timeline = (function(superClass) {
     extend(timeline, superClass);
@@ -1994,11 +2004,6 @@
 
     timeline.prototype.do_dom = function(dom, ctx) {
       this.dom = dom;
-    };
-
-    timeline.prototype.do_context = function(ctx1) {
-      this.ctx = ctx1;
-      return this.do_blur();
     };
 
     timeline.prototype.do_focus = function(e) {
@@ -2016,6 +2021,93 @@
 
     timeline.prototype._value = function(e) {
       return e.offsets;
+    };
+
+    timeline.prototype.data = function() {
+      view_port_x();
+      return base.reduce;
+    };
+
+    timeline.prototype.onmove = function(arg) {
+      var index, is_touch, offset, query, state, time;
+      state = arg.state, is_touch = arg.is_touch, offset = arg.offset;
+      if (!(is_touch && (offset != null) && view_port_x())) {
+        return;
+      }
+      search("");
+      index = Math.floor(offset.x / x);
+      time = masks[time_ids[index]].all.min;
+      query = graph_height < offset.y ? Mem.Query.messages.talk("open", false, {}) : base;
+      return choice_last(query, time);
+    };
+
+    timeline.prototype.draw = function(arg) {
+      var ctx, focus, offset;
+      ctx = arg.ctx;
+      focus = Mem.Query.messages.find(talk_at());
+      if (!(focus && view_port_x())) {
+        return;
+      }
+      offset = index_at(focus.updated_at);
+      ctx.beginPath();
+      ctx.strokeStyle = RAILS.log.colors.focus;
+      ctx.globalAlpha = 1;
+      ctx.moveTo(x * offset, height);
+      ctx.lineTo(x * offset, 0);
+      return ctx.stroke();
+    };
+
+    timeline.prototype.background = function(arg) {
+      var color, count_height, count_width, ctx, event, i, j, k, left, len, len1, len2, mask, max_width, mestype, ref1, right, time_id, top;
+      ctx = arg.ctx;
+      if (!(view_port_x() && view_port_y())) {
+        return;
+      }
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = RAILS.log.colors.back;
+      ctx.globalAlpha = 0.5;
+      ctx.fillRect(0, 0, x * time_width, y * max_height);
+      count_width = 1;
+      for (left = i = 0, len = time_ids.length; i < len; left = ++i) {
+        time_id = time_ids[left];
+        mask = masks[time_id];
+        top = max_height;
+        for (j = 0, len1 = mestype_orders.length; j < len1; j++) {
+          mestype = mestype_orders[j];
+          color = RAILS.log.colors[mestype];
+          if (mask[mestype]) {
+            count_height = mask[mestype].count;
+            top -= count_height;
+            ctx.fillStyle = color;
+            ctx.globalAlpha = 1;
+            ctx.fillRect(x * left, y * top, 1 + x * count_width, y * count_height);
+          }
+        }
+      }
+      ctx.beginPath();
+      ref1 = Mem.Query.events.list;
+      for (k = 0, len2 = ref1.length; k < len2; k++) {
+        event = ref1[k];
+        if (!event.created_at) {
+          continue;
+        }
+        right = index_at(event.updated_at);
+        left = index_at(event.created_at);
+        ctx.strokeStyle = RAILS.log.colors.line;
+        ctx.globalAlpha = 1;
+        ctx.moveTo(x * left, height);
+        ctx.lineTo(x * left, 0);
+        ctx.fillStyle = RAILS.log.colors.event;
+        ctx.fillRect(x * left, graph_height, x * time_width, height);
+        ctx.textAlign = "left";
+        ctx.fillStyle = RAILS.log.colors.text;
+        ctx.font = "30px serif";
+        max_width = x * (right - left) - 4;
+        if (0 < max_width) {
+          ctx.fillText(event.name, x * left, height - 12, max_width);
+        }
+      }
+      return ctx.stroke();
     };
 
     return timeline;
@@ -2102,7 +2194,7 @@
       if (m_attr == null) {
         m_attr = {};
       }
-      ma = this._attr_label(this._id, this.attr, m_attr);
+      ma = this._attr_label(this.attr, m_attr);
       size = this.calc.size;
       if (ma.maxlength) {
         max_size = ma.maxlength;
@@ -2138,7 +2230,7 @@
       if (m_attr == null) {
         m_attr = {};
       }
-      ma = this._attr(this._id, this.attr, m_attr, {
+      ma = this._attr(this.attr, m_attr, {
         className: [this.attr.className, m_attr.className].join(" "),
         name: this.__name
       });

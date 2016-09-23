@@ -4,7 +4,7 @@ _ = require "lodash"
 { InputTie } = module.exports
 
 
-input_pick = (attrs, last)->
+input_pick = ( attrs, last )->
   _.assignIn {}, attrs..., last
 
 option_pick = (attrs...)->
@@ -15,31 +15,31 @@ option_pick = (attrs...)->
   _.assignIn attrs...
 
 
-_attr_label = ( _id, attrs...)->
+_attr_label = (attrs...)->
   _.assignIn attrs...
 
 
-change_attr = ( _id, attrs... )->
+change_attr = (attrs...)->
   { _value, tie } = b = @
   ma = input_pick attrs,
     config: @_config
     disabled: tie.disabled
-    onblur:     (e)-> tie.do_blur   _id, e
-    onfocus:    (e)-> tie.do_focus  _id, e
-    onselect:   (e)-> tie.do_select _id, e
-    onchange:   (e)-> tie.do_change _id, _value(e), ma
-    oninvalid:  (e)-> tie.do_fail   _id, _value(e), ma
+    onblur:     (e)-> tie.do_blur   b, e
+    onfocus:    (e)-> tie.do_focus  b, e
+    onselect:   (e)-> tie.do_select b, e
+    onchange:   (e)-> tie.do_change b, _value(e), ma
+    oninvalid:  (e)-> tie.do_fail   b, _value(e), ma
 
-input_attr = ( _id, attrs... )->
+input_attr = (attrs...)->
   { _value, tie } = b = @
   ma = input_pick attrs,
     config: @_config
     disabled: tie.disabled
-    onblur:    (e)-> tie.do_blur   _id, e
-    onfocus:   (e)-> tie.do_focus  _id, e
-    onselect:  (e)-> tie.do_select _id, e
-    oninput:   (e)-> tie.do_change _id, _value(e), ma
-    oninvalid: (e)-> tie.do_fail   _id, _value(e), ma
+    onblur:    (e)-> tie.do_blur   b, e
+    onfocus:   (e)-> tie.do_focus  b, e
+    onselect:  (e)-> tie.do_select b, e
+    oninput:   (e)-> tie.do_change b, _value(e), ma
+    oninvalid: (e)-> tie.do_fail   b, _value(e), ma
 
 
 e_checked   = (e)-> (e.currentTarget || @).checked
@@ -68,7 +68,6 @@ validity_attr =
 
 
 class basic_input
-  _config: ->
   _attr_label: _attr_label
   _value: e_value
   _attr:  input_attr
@@ -82,7 +81,7 @@ class basic_input
 
   constructor: (@tie, @format)->
     { @_id, @options, @attr, @name, @current, info, option_default } = @format
-    @_config = @tie._config @_id
+    @_config = @tie._config @
     @__info = info
     @__uri = Mem.pack[@type]
     @__val = Mem.unpack[@type]
@@ -90,12 +89,12 @@ class basic_input
     @tie.do_draw @do_draw.bind @
     @option_default = _.assign {}, @option_default, option_default
 
+  config: (@dom, isNew, context)->
+
   info: (@info_msg = "")->
   error: (msg = "")->
     @dom?.setCustomValidity msg
 
-  do_context: (context)->
-  do_dom: (@dom)->
   do_fail: (value)->
   do_focus: ->
   do_blur: ->
@@ -146,11 +145,11 @@ class basic_input
       text = info.off   if info.off   && ! @__value
       text = info.on    if info.on    && @__value
       text = info.valid if info.valid && @__value
-      ma = @_attr_label @_id, m_attr, @format.label.attr
+      ma = @_attr_label m_attr, @format.label.attr
       m "label", ma, text
 
   field: (m_attr = {})->
-    ma = @_attr @_id, @attr, m_attr,
+    ma = @_attr @attr, m_attr,
       className: [@attr.className, m_attr.className].join(" ")
       name:  @__name
       value: @__value
@@ -176,7 +175,7 @@ class InputTie.type.checkbox extends basic_input
 
   field: (m_attr = {})->
     option = @option @__value
-    ma = @_attr @_id, @attr, m_attr,
+    ma = @_attr @attr, m_attr,
       className: [@attr.className, m_attr.className].join(" ")
       type: "checkbox"
       name:  @__name
@@ -200,7 +199,7 @@ class InputTie.type.radio extends basic_input
 
   item: (value, m_attr = {})->
     option = @option value
-    ma = @_attr @_id, @attr, m_attr, option,
+    ma = @_attr @attr, m_attr, option,
       className: [@attr.className, option.className, m_attr.className].join(" ")
       type: "radio"
       name:  @__name
@@ -228,7 +227,7 @@ class InputTie.type.select extends basic_input
       list.unshift @item "", m_attr
       # disabled
 
-    ma = @_attr @_id, @attr, m_attr,
+    ma = @_attr @attr, m_attr,
       className: [@attr.className, m_attr.className].join(" ")
       name: @__name
     # data-tooltip, disabled
@@ -239,7 +238,7 @@ class InputTie.type.select.multiple extends basic_input
   _value: e_selected
   _attr:  change_attr
   field: (m_attr = {})->
-    ma = @_attr @_id, @attr, m_attr,
+    ma = @_attr @attr, m_attr,
       className: [@attr.className, m_attr.className].join(" ")
       name: @__name
     # data-tooltip, disabled

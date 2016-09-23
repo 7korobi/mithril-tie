@@ -23,7 +23,7 @@ c_icon  = (bool, new_val)-> if bool then null else new_val
 
 
 class btn_input extends InputTie.type.hidden
-  _attr: ( _id, attrs..., last )->
+  _attr: ( attrs..., last )->
     { _id, tie } = b = @
     { className, disabled, selected, value, target } = last
     onchange = ->
@@ -32,8 +32,8 @@ class btn_input extends InputTie.type.hidden
       .catch ->
         b.timer = null
       value = b._value selected, value, target
-      tie.do_change _id, value, ma
-      tie.do_fail   _id, value, ma unless b.dom.validity.valid
+      tie.do_change b, value, ma
+      tie.do_fail   b, value, ma unless b.dom.validity.valid
 
     css = "btn"
     css += " edge" unless disabled || tie.disabled
@@ -73,7 +73,7 @@ class InputTie.type.toggle extends btn_input
   field: (m_attr = {})->
     next = @__value
     option = @option next
-    ma = @_attr @_id, @attr, m_attr,
+    ma = @_attr @attr, m_attr,
       className: [@attr.className, m_attr.className].join(" ")
       value: next
     # data-tooltip, disabled
@@ -92,7 +92,7 @@ class InputTie.type.checkbox_btn extends btn_input
 
   field: (m_attr = {})->
     option = @option @__value
-    ma = @_attr @_id, @attr, m_attr,
+    ma = @_attr @attr, m_attr,
       className: [@attr.className, m_attr.className].join(" ")
       selected: @__value
       value:    @__value
@@ -129,7 +129,7 @@ class InputTie.type.icon extends btn_input
     option = @option value
     tag = m_attr.tag || "menuicon"
 
-    ma = @_attr @_id, @attr, m_attr, option,
+    ma = @_attr @attr, m_attr, option,
       className: [@attr.className, m_attr.className, option.className].join(" ")
       selected: value == @__value
       value:    value
@@ -155,7 +155,7 @@ class InputTie.type.btns extends btn_input
 
   item: (value, m_attr = {})->
     option = @option value
-    ma = @_attr @_id, @attr, m_attr, option,
+    ma = @_attr @attr, m_attr, option,
       className: [@attr.className, option.className, m_attr.className].join(" ")
       selected: value == @__value
       value:    value
@@ -179,7 +179,7 @@ class InputTie.type.btns.multiple extends btn_input
 
   item: (value, m_attr = {})->
     option = @option value
-    ma = @_attr @_id, @attr, m_attr, option,
+    ma = @_attr @attr, m_attr, option,
       className: [@attr.className, option.className, m_attr.className].join(" ")
       selected: @__value[value]
       value:    @__value[value]
@@ -207,7 +207,7 @@ class InputTie.type.stack extends btn_input
 
   item: (target, m_attr = {})->
     option = @option target
-    ma = @_attr @_id, @attr, m_attr, option,
+    ma = @_attr @attr, m_attr, option,
       className: [@attr.className, option.className, m_attr.className].join(" ")
       target: target
       value: @__value

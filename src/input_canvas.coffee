@@ -3,6 +3,8 @@ m = require "mithril"
 _ = require "lodash"
 { InputTie, Tie } = module.exports
 
+OBJ = ->
+  new Object null
 
 capture = (ctx, e)->
   ctx.offset = null
@@ -57,11 +59,26 @@ browser = ->
 class InputTie.type.canvas extends InputTie.type.hidden
   type: "Array"
 
-  do_draw: ->
-  do_dom: (@dom)->
-  do_context: (@ctx)->
+  config: (@dom, isNew, @ctx)->
+    if isNew
+      @data = {}
+      @ctx.draw = @dom.getContext "2d"
+
+    [ w, h ] = @ctx.size = [ @dom.width, @dom.height ]
+    { draw, size } = @ctx
+    if @data
+      @data.canvas ?= OBJ()
+      if image = @data.canvas[size]
+        draw.putImageData image, 0, 0
+        return
+    @do_background()
+    if @data
+      @data.canvas[size] = draw.getImageData 0, 0, w * 2, h * 2
     @do_blur()
 
+  do_background: ->
+
+  do_draw: ->
   do_focus: (e)->
     @ctx.is_tap = true
   do_blur:  (e)->
@@ -74,24 +91,24 @@ class InputTie.type.canvas extends InputTie.type.hidden
   _value: (e)->
     e.offsets
 
-  _attr: ( _id, attrs... )->
-    { _value, tie, ctx } = @
+  _attr: ( attrs... )->
+    { _value, tie, ctx } = b = @
 
     start = (e)->
-      tie.do_focus _id, e
+      tie.do_focus b, e
       move e
     end = (e)->
       move e
-      tie.do_blur _id, e
+      tie.do_blur b, e
 
     move = (e)->
       capture ctx, e
-      tie.do_change _id, _value(ctx), ma
+      tie.do_change b, _value(ctx), ma
 
     cancel = (e)->
       capture ctx, e
-      tie.do_fail _id, _value(ctx), ma
-      tie.do_blur _id, e
+      tie.do_fail b, _value(ctx), ma
+      tie.do_blur b, e
 
     ma = _pick attrs,
       config: @_config
@@ -107,7 +124,7 @@ class InputTie.type.canvas extends InputTie.type.hidden
 
   field: (m_attr = {})->
     [ w, h ] = m_attr.size || @attr.size
-    ma = @_attr @_id, @attr, m_attr,
+    ma = @_attr @attr, m_attr,
       className: [@attr.className, m_attr.className].join(" ")
       width:  w
       height: h

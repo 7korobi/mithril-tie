@@ -6,14 +6,14 @@ _ = require "lodash"
 OBJ = ->
   new Object null
 
-capture = (ctx, e)->
+capture = ({dom, ctx}, e)->
   ctx.offset = null
   ctx.offsets = []
   return ctx.offsets unless e? && ctx?
   if e.touches?
-    rect = ctx.getBoundingClientRect()
+    rect = dom.getBoundingClientRect()
     ctx.offsets = for e_touch in e.touches
-      touch(touch, rect) # touch device
+      touch(e_touch, rect) # touch device
     ctx.offset = ctx.offsets[0] if 1 == e.touches.length
   else
     ctx.offset = mouse(e) # mouse interface.
@@ -61,8 +61,9 @@ class InputTie.type.canvas extends InputTie.type.hidden
 
   config: (@dom, isNew, @ctx)->
     if isNew
-      @data = {}
+      @data ?= OBJ()
       @ctx.draw = @dom.getContext "2d"
+      @do_blur()
 
     [ w, h ] = @ctx.size = [ @dom.width, @dom.height ]
     { draw, size } = @ctx
@@ -74,7 +75,6 @@ class InputTie.type.canvas extends InputTie.type.hidden
     @do_background()
     if @data
       @data.canvas[size] = draw.getImageData 0, 0, w * 2, h * 2
-    @do_blur()
 
   do_background: ->
 
@@ -84,42 +84,42 @@ class InputTie.type.canvas extends InputTie.type.hidden
   do_blur:  (e)->
     @ctx.is_tap = false
     @ctx.history = []
+  do_move: (ctx)->
+    @tie.do_change @, @_value ctx
 
   do_fail:   (offsets)->
   do_change: (offsets)->
 
   _value: (e)->
-    e.offsets
+    e.offset
 
   _attr: ( attrs... )->
     { _value, tie, ctx } = b = @
 
-    start = (e)->
+    focus = (e)->
       tie.do_focus b, e
       move e
-    end = (e)->
+    blur = (e)->
       move e
       tie.do_blur b, e
-
     move = (e)->
-      capture ctx, e
-      tie.do_change b, _value(ctx), ma
-
+      capture b, e
+      tie.do_move b, b.ctx
     cancel = (e)->
-      capture ctx, e
-      tie.do_fail b, _value(ctx), ma
+      capture b, e
+      tie.do_fail b, _value b.ctx
       tie.do_blur b, e
 
     ma = _pick attrs,
       config: @_config
-      ontouchend: end
+      ontouchend: blur
       ontouchmove: move
-      ontouchstart: start
+      ontouchstart: focus
       ontouchcancel: cancel
-      onmouseup:   end
+      onmouseup:  blur
       onmousemove: move
-      onmousedown: start
-      onmouseout:  end
+      onmousedown: focus
+      onmouseout: blur
       onmouseover: move
 
   field: (m_attr = {})->

@@ -249,6 +249,12 @@
       return this.focused = input;
     };
 
+    InputTie.prototype.do_move = function(input, e) {
+      var id;
+      input.do_move(e);
+      return id = input._id;
+    };
+
     InputTie.prototype.do_select = function(input, e) {
       var anchorOffset, focusOffset, offsets, s;
       s = getSelection();
@@ -1786,22 +1792,23 @@
     return new Object(null);
   };
 
-  capture = function(ctx, e) {
-    var e_touch, rect;
+  capture = function(arg, e) {
+    var ctx, dom, e_touch, rect;
+    dom = arg.dom, ctx = arg.ctx;
     ctx.offset = null;
     ctx.offsets = [];
     if (!((e != null) && (ctx != null))) {
       return ctx.offsets;
     }
     if (e.touches != null) {
-      rect = ctx.getBoundingClientRect();
+      rect = dom.getBoundingClientRect();
       ctx.offsets = (function() {
         var i, len, ref1, results;
         ref1 = e.touches;
         results = [];
         for (i = 0, len = ref1.length; i < len; i++) {
           e_touch = ref1[i];
-          results.push(touch(touch, rect));
+          results.push(touch(e_touch, rect));
         }
         return results;
       })();
@@ -1867,13 +1874,16 @@
 
     canvas.prototype.type = "Array";
 
-    canvas.prototype.config = function(dom, isNew, ctx1) {
+    canvas.prototype.config = function(dom1, isNew, ctx1) {
       var base, draw, h, image, ref1, ref2, size, w;
-      this.dom = dom;
+      this.dom = dom1;
       this.ctx = ctx1;
       if (isNew) {
-        this.data = {};
+        if (this.data == null) {
+          this.data = OBJ();
+        }
         this.ctx.draw = this.dom.getContext("2d");
+        this.do_blur();
       }
       ref1 = this.ctx.size = [this.dom.width, this.dom.height], w = ref1[0], h = ref1[1];
       ref2 = this.ctx, draw = ref2.draw, size = ref2.size;
@@ -1888,9 +1898,8 @@
       }
       this.do_background();
       if (this.data) {
-        this.data.canvas[size] = draw.getImageData(0, 0, w * 2, h * 2);
+        return this.data.canvas[size] = draw.getImageData(0, 0, w * 2, h * 2);
       }
-      return this.do_blur();
     };
 
     canvas.prototype.do_background = function() {};
@@ -1906,45 +1915,49 @@
       return this.ctx.history = [];
     };
 
+    canvas.prototype.do_move = function(ctx) {
+      return this.tie.do_change(this, this._value(ctx));
+    };
+
     canvas.prototype.do_fail = function(offsets) {};
 
     canvas.prototype.do_change = function(offsets) {};
 
     canvas.prototype._value = function(e) {
-      return e.offsets;
+      return e.offset;
     };
 
     canvas.prototype._attr = function() {
-      var _value, attrs, b, cancel, ctx, end, ma, move, ref1, start, tie;
+      var _value, attrs, b, blur, cancel, ctx, focus, ma, move, ref1, tie;
       attrs = 1 <= arguments.length ? slice.call(arguments, 0) : [];
       ref1 = b = this, _value = ref1._value, tie = ref1.tie, ctx = ref1.ctx;
-      start = function(e) {
+      focus = function(e) {
         tie.do_focus(b, e);
         return move(e);
       };
-      end = function(e) {
+      blur = function(e) {
         move(e);
         return tie.do_blur(b, e);
       };
       move = function(e) {
-        capture(ctx, e);
-        return tie.do_change(b, _value(ctx), ma);
+        capture(b, e);
+        return tie.do_move(b, b.ctx);
       };
       cancel = function(e) {
-        capture(ctx, e);
-        tie.do_fail(b, _value(ctx), ma);
+        capture(b, e);
+        tie.do_fail(b, _value(b.ctx));
         return tie.do_blur(b, e);
       };
       return ma = _pick(attrs, {
         config: this._config,
-        ontouchend: end,
+        ontouchend: blur,
         ontouchmove: move,
-        ontouchstart: start,
+        ontouchstart: focus,
         ontouchcancel: cancel,
-        onmouseup: end,
+        onmouseup: blur,
         onmousemove: move,
-        onmousedown: start,
-        onmouseout: end,
+        onmousedown: focus,
+        onmouseout: blur,
         onmouseover: move
       });
     };
@@ -2002,10 +2015,6 @@
 
     timeline.prototype.do_draw = function() {};
 
-    timeline.prototype.do_dom = function(dom, ctx) {
-      this.dom = dom;
-    };
-
     timeline.prototype.do_focus = function(e) {
       return this.ctx.is_tap = true;
     };
@@ -2014,6 +2023,8 @@
       this.ctx.is_tap = false;
       return this.ctx.history = [];
     };
+
+    timeline.prototype.do_move = function(ctx) {};
 
     timeline.prototype.do_fail = function(offsets) {};
 

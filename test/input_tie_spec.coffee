@@ -138,12 +138,14 @@ describe "InputTie.type.textarea", ()->
     elem = {}
     state = {}
     context = {}
-    vdom = input.field()
-    vdom.attrs.config elem, true, context
-    tie.do_focus  input, {}
-    tie.do_change input, "ab\ncd\nef"
-    vdom.attrs.config elem, false, context
-    tie.do_blur   input, {}
+    { attrs } = input.field()
+    attrs.config elem, true, context
+    attrs.onfocus {}
+    attrs.oninput
+      currentTarget:
+        value: "ab\ncd\nef"
+    attrs.config elem, false, context
+    attrs.onblur {}
 
     expect( params.t1 ).to.eq "ab\ncd\nef"
     expect( state.stay ).to.eq "ab\ncd\nef"
@@ -157,12 +159,14 @@ describe "InputTie.type.textarea", ()->
     elem = {}
     state = {}
     context = {}
-    vdom = input.field()
-    vdom.attrs.config elem, true, context
-    tie.do_focus  input, {}
-    tie.do_change input, "abcdef"
-    vdom.attrs.config elem, false, context
-    tie.do_blur   input, {}
+    { attrs } = input.field()
+    attrs.config elem, true, context
+    attrs.onfocus {}
+    attrs.oninput
+      currentTarget:
+        value: "abcdef"
+    attrs.config elem, false, context
+    attrs.onblur {}
 
     expect( params.t1 ).to.eq "abcdef"
     expect( state.stay ).to.eq undefined
@@ -189,12 +193,14 @@ describe "InputTie.type.text", ->
     elem = {}
     state = {}
     context = {}
-    vdom = input.field()
-    vdom.attrs.config elem, true, context
-    tie.do_focus  input, {}
-    tie.do_change input, "abcdefg"
-    vdom.attrs.config elem, false, context
-    tie.do_blur   input, {}
+    { attrs } = input.field()
+    attrs.config elem, true, context
+    attrs.onfocus {}
+    attrs.oninput
+      currentTarget:
+        value: "abcdefg"
+    attrs.config elem, false, context
+    attrs.onblur {}
 
     expect( params.t2 ).to.eq "abcdefg"
     expect( state.stay ).to.eq undefined
@@ -222,8 +228,12 @@ describe "InputTie.type.canvas", ->
     input = tie.input.canvas
     state = {}
     context = {}
-    vdom = input.field()
     elem =
+      width:  800
+      height: 600
+      getBoundingClientRect: ->
+        left: 0
+        top:  0
       getContext: ->
         image = null
         putImageData: (new_img, x, y)->
@@ -233,14 +243,27 @@ describe "InputTie.type.canvas", ->
         getImageData: (x, y, w, h)->
           image = [x,y,w,h]
 
-    vdom.attrs.config elem, true, context
-    tie.do_focus  input, {}
-    tie.do_change input, [[10,20]]
-    vdom.attrs.config elem, false, context
-    tie.do_blur   input, {}
+    { attrs } = input.field()
+    attrs.config elem, true, context
+    attrs.ontouchstart
+      touches: [
+        pageX: 55
+        pageY: 19
+      ]
+    attrs.ontouchmove
+      touches: [
+        pageX: 35
+        pageY: 12
+      ]
+    attrs.config elem, false, context
+    attrs.ontouchend
+      touches: [
+        pageX:  5
+        pageY: 10
+      ]
 
-    expect( params.canvas ).to.deep.eq [[10,20]]
+    expect( params.canvas ).to.deep.eq [10,20]
     expect( state.stay ).to.eq undefined
-    expect( state.change ).to.deep.eq [[10,20]]
+    expect( state.change ).to.deep.eq [10,20]
     tie.errors (msg, name)->
       console.warn [name, msg]

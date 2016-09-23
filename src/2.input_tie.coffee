@@ -47,7 +47,6 @@ class InputTie
   do_change: (input, value)->
     value = input.__val value
     input.do_change value
-
     id = input._id
     old = @params[id]
     if old == value
@@ -73,6 +72,10 @@ class InputTie
     @focus id, true, @focus_id, @focused
     @focus_id = id
     @focused = input
+
+  do_move: (input, e)->
+    input.do_move e
+    id = input._id
 
   do_select: (input, e)->
     s = getSelection()

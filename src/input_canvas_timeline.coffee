@@ -30,13 +30,14 @@ class InputTie.type.timeline extends InputTie.type.canvas
   type: "Array"
 
   do_draw: ->
-  do_dom: (@dom, ctx)->
 
   do_focus: (e)->
     @ctx.is_tap = true
   do_blur:  (e)->
     @ctx.is_tap = false
     @ctx.history = []
+
+  do_move: (ctx)->
 
   do_fail:   (offsets)->
   do_change: (offsets)->

@@ -139,12 +139,12 @@ describe "InputTie.type.textarea", ()->
     state = {}
     context = {}
     { attrs } = input.field()
-    attrs.config elem, true, context
+    attrs.config elem, false, context
     attrs.onfocus {}
     attrs.oninput
       currentTarget:
         value: "ab\ncd\nef"
-    attrs.config elem, false, context
+    attrs.config elem, true, context
     attrs.onblur {}
 
     expect( params.t1 ).to.eq "ab\ncd\nef"
@@ -160,12 +160,12 @@ describe "InputTie.type.textarea", ()->
     state = {}
     context = {}
     { attrs } = input.field()
-    attrs.config elem, true, context
+    attrs.config elem, false, context
     attrs.onfocus {}
     attrs.oninput
       currentTarget:
         value: "abcdef"
-    attrs.config elem, false, context
+    attrs.config elem, true, context
     attrs.onblur {}
 
     expect( params.t1 ).to.eq "abcdef"
@@ -194,12 +194,12 @@ describe "InputTie.type.text", ->
     state = {}
     context = {}
     { attrs } = input.field()
-    attrs.config elem, true, context
+    attrs.config elem, false, context
     attrs.onfocus {}
     attrs.oninput
       currentTarget:
         value: "abcdefg"
-    attrs.config elem, false, context
+    attrs.config elem, true, context
     attrs.onblur {}
 
     expect( params.t2 ).to.eq "abcdefg"
@@ -234,17 +234,19 @@ describe "InputTie.type.canvas", ->
       getBoundingClientRect: ->
         left: 0
         top:  0
-      getContext: ->
+      getContext: (args...)->
+        expect(args).to.deep.eq ["2d"]
         image = null
-        putImageData: (new_img, x, y)->
-          expect( x ).to.eq 0
-          expect( y ).to.eq 0
-          expect( image ).to.deep.eq new_img
-        getImageData: (x, y, w, h)->
-          image = [x,y,w,h]
+        clearRect: (args...)->
+          expect(args).to.deep.eq [0,0,800,600]
+        putImageData: (args...)->
+          expect(args).to.deep.eq [image,0,0]
+        getImageData: (args...)->
+          expect(args).to.deep.eq [0,0,800,600]
+          image = args
 
     { attrs } = input.field()
-    attrs.config elem, true, context
+    attrs.config elem, false, context
     attrs.ontouchstart
       touches: [
         pageX: 55
@@ -255,7 +257,7 @@ describe "InputTie.type.canvas", ->
         pageX: 35
         pageY: 12
       ]
-    attrs.config elem, false, context
+    attrs.config elem, true, context
     attrs.ontouchend
       touches: [
         pageX:  5

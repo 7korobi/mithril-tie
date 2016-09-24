@@ -89,7 +89,7 @@ class basic_input
     @tie.do_draw @do_draw.bind @
     @option_default = _.assign {}, @option_default, option_default
 
-  config: (@dom, isNew, context)->
+  config: (@dom, isStay, context)->
 
   info: (@info_msg = "")->
   error: (msg = "")->

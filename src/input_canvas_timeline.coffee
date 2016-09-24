@@ -24,98 +24,106 @@ mestype_orders = [
   "ADMIN"
 ]
 
+{ View, Views } = InputTie.util.canvas
+
+class Timeline extends Views
+  dom: (@dom)->
+    super
+    [ @field, @foots ] = @build View, View
+
+  resize: (size)->
+    super
+    @base = Mem.Query.messages.talk(talk(), open(), potofs_hide())
+    return unless base.reduce
+
+    @masks = @base.reduce.mask || {}
+    heights =
+      for time_id, mask of @masks
+        mask.all.count
+    max_height = Math.max heights...
+
+    @time_ids = _.sortBy Object.keys(@masks), Mem.unpack.Date
+
+    [ width, height ] = size
+    @field.fit
+      size:   [            width, height - 50 ]
+      view:   [ @time_ids.length,  max_height ]
+    @foots.fit
+      offset: [                0, height - 50 ]
+      size:   [            width,          50 ]
+      view:   [ @time_ids.length,           1 ]
+
+    @field.pen
+      fillStyle: RAILS.log.colors.back
+      globalAlpha: 0.5
+    @field.fill()
+
+    for time_id, left in time_ids
+      mask = masks[time_id]
+      top = max_height
+      for mestype in mestype_orders when mask[mestype]
+        height = mask[mestype].count
+        top -= height
+        @field.pen
+          fillStyle: RAILS.log.colors[mestype]
+          globalAlpha: 1
+        @field.rect [left, top], [1, height]
+
+    @foots.path =>
+      for event in Mem.Query.events.list when event.created_at
+        right = index_at event.updated_at
+        left = index_at event.created_at
+
+        @foots.pen
+          strokeStyle: RAILS.log.colors.line
+          globalAlpha: 1
+        @foots.moveTo  left, 1
+        @foots.lineTo  left, 0
+        @foots.moveTo right, 1
+        @foots.lineTo right, 0
+        @foots.pen
+          fillStyle: RAILS.log.colors.event
+        @foots.fill()
+        @foots.pen
+          font: "30px serif"
+          textAlign: "left"
+          fillStyle: RAILS.log.colors.text
+        @foots.text event.name, [left, 38], right - left
+
+  draw: (@ctx)->
+    focus = Mem.Query.messages.find Url.params.talk_at
+    return unless focus
+
+    x = @index focus.updated_at
+    @field.path =>
+      @field.pen
+        strokeStyle: RAILS.log.colors.focus
+        globalAlpha: 1
+      @field.moveTo x, @show_height
+      @field.lineTo x, 0
+
+  index: (updated_at)->
+    @time_ids.indexOf Mem.pack.Date updated_at / timespan
+
+  choice: (x, query)->
+    index = Math.floor x
+    o = @masks[@time_ids[index]].all.min_is
+
+    Url.params.talk_at = o._id
+    Url.params.icon "search"
+    Url.params.scope "talk"
+    Url.params.scroll ""
+    win.scroll.rescroll Url.prop.talk_at
+
+  touch: (at)->
+    Url.params.search = ""
+    @field.touch at, (x)=>
+      @choice x, base
+    @foots.touch at, (x)=>
+      @choice x, Mem.Query.messages.talk "open", false, {}
 
 
 class InputTie.type.timeline extends InputTie.type.canvas
   type: "Array"
+  _graph: Timeline
 
-  do_draw: ->
-
-  do_focus: (e)->
-    @ctx.is_tap = true
-  do_blur:  (e)->
-    @ctx.is_tap = false
-    @ctx.history = []
-
-  do_move: (ctx)->
-
-  do_fail:   (offsets)->
-  do_change: (offsets)->
-
-  _value: (e)->
-    e.offsets
-
-
-
-  data: ->
-    view_port_x()
-    base.reduce
-
-  onmove: ({state, is_touch, offset})->
-    return unless is_touch && offset? && view_port_x()
-    search ""
-
-    index = Math.floor(offset.x / x)
-    time = masks[time_ids[index]].all.min
-    query =
-      if graph_height < offset.y
-        Mem.Query.messages.talk("open", false, {})
-      else
-        base
-
-    choice_last query, time
-
-  draw: ({ctx})->
-    focus = Mem.Query.messages.find talk_at()
-    return unless focus && view_port_x()
-
-    offset = index_at(focus.updated_at)
-    ctx.beginPath()
-    ctx.strokeStyle = RAILS.log.colors.focus
-    ctx.globalAlpha = 1
-    ctx.moveTo x * offset, height
-    ctx.lineTo x * offset,  0
-    ctx.stroke()
-
-  background: ({ctx})->
-    return unless view_port_x() && view_port_y()
-
-    ctx.clearRect 0, 0, width, height
-    ctx.fillStyle = RAILS.log.colors.back
-    ctx.globalAlpha = 0.5
-    ctx.fillRect 0, 0, x * time_width, y * max_height
-
-    count_width = 1
-    for time_id, left in time_ids
-      mask = masks[time_id]
-      top = max_height
-      for mestype in mestype_orders
-        color = RAILS.log.colors[mestype]
-        if mask[mestype]
-          count_height = mask[mestype].count
-          top -= count_height
-          ctx.fillStyle = color
-          ctx.globalAlpha = 1
-          ctx.fillRect x * left, y * top, 1 + x * count_width, y * count_height
-
-    ctx.beginPath()
-    for event in Mem.Query.events.list when event.created_at
-      right = index_at event.updated_at
-      left = index_at event.created_at
-      ctx.strokeStyle = RAILS.log.colors.line
-      ctx.globalAlpha = 1
-      ctx.moveTo x * left, height
-      ctx.lineTo x * left,  0
-
-      ctx.fillStyle = RAILS.log.colors.event
-      ctx.fillRect x * left, graph_height, x * time_width, height
-
-      ctx.textAlign = "left"
-      ctx.fillStyle = RAILS.log.colors.text
-      ctx.font = "30px serif"
-
-      max_width = x * (right - left) - 4
-      if 0 < max_width
-        ctx.fillText event.name, x * left, height - 12, max_width
-
-    ctx.stroke()

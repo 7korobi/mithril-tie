@@ -3,6 +3,8 @@ m = require "mithril"
 _ = require "lodash"
 { InputTie, Tie } = module.exports
 
+ratio = 2
+
 OBJ = ->
   new Object null
 
@@ -25,19 +27,19 @@ mouse = (event)->
   x = event.offsetX || event.layerX # PC || firefox
   y = event.offsetY || event.layerY # PC || firefox
   if x? && y?
-    x *= 2
-    y *= 2
+    x *= ratio
+    y *= ratio
     [x, y]
 
 
 touch_A = ({pageX, pageY}, {left, top})->
-  x = 2 * (pageX - left - window.scrollX)
-  y = 2 * (pageY - top  - window.scrollY)
+  x = ratio * (pageX - left - window.scrollX)
+  y = ratio * (pageY - top  - window.scrollY)
   [x, y]
 
 touch_B = ({pageX, pageY}, {left, top})->
-  x = 2 * (pageX - left)
-  y = 2 * (pageY - top  - window.scrollY)
+  x = ratio * (pageX - left)
+  y = ratio * (pageY - top  - window.scrollY)
   [x, y]
 
 touch = touch_B
@@ -55,40 +57,43 @@ browser = ->
     else
       touch_B
 
-
 class InputTie.type.canvas extends InputTie.type.hidden
   type: "Array"
+  _views: InputTie.util.canvas.Views
 
-  config: (@dom, isNew, @ctx)->
-    if isNew
-      @data ?= OBJ()
-      @ctx.draw = @dom.getContext "2d"
+  constructor: ->
+    @views = new @_views
+    super
+
+  config: (@dom, isStay, @ctx)->
+    console.warn ["config", arguments...]
+    unless isStay
+      @views.dom @dom
       @do_blur()
-
-    [ w, h ] = @ctx.size = [ @dom.width, @dom.height ]
-    { draw, size } = @ctx
-    if @data
-      @data.canvas ?= OBJ()
-      if image = @data.canvas[size]
-        draw.putImageData image, 0, 0
-        return
-    @do_background()
-    if @data
-      @data.canvas[size] = draw.getImageData 0, 0, w * 2, h * 2
-
-  do_background: ->
+    @views.background @size
 
   do_draw: ->
-  do_focus: (e)->
-    @ctx.is_tap = true
-  do_blur:  (e)->
-    @ctx.is_tap = false
-    @ctx.history = []
-  do_move: (ctx)->
-    @tie.do_change @, @_value ctx
 
-  do_fail:   (offsets)->
-  do_change: (offsets)->
+  do_focus: (e)->
+    @ctx.is_touch = true
+
+  do_blur:  (e)->
+    @ctx.is_touch = false
+    @ctx.history = []
+    @views.draw @ctx
+
+  do_move: ->
+    { is_touch, offset, offsets, history } = @ctx
+    if offset
+      if is_touch
+        @views.touch offset
+      else
+        @views.over  offset
+    @views.draw @ctx
+    @tie.do_change @, @_value @ctx
+
+  do_fail:   (offset)->
+  do_change: (offset)->
 
   _value: (e)->
     e.offset
@@ -104,7 +109,7 @@ class InputTie.type.canvas extends InputTie.type.hidden
       tie.do_blur b, e
     move = (e)->
       capture b, e
-      tie.do_move b, b.ctx
+      b.do_move()
     cancel = (e)->
       capture b, e
       tie.do_fail b, _value b.ctx
@@ -123,12 +128,12 @@ class InputTie.type.canvas extends InputTie.type.hidden
       onmouseover: move
 
   field: (m_attr = {})->
-    [ w, h ] = m_attr.size || @attr.size
+    [ w, h ] = @size = m_attr.size || @attr.size
     ma = @_attr @attr, m_attr,
       className: [@attr.className, m_attr.className].join(" ")
       width:  w
       height: h
-      style: "width: #{w / 2}px; height: #{h / 2}px;"
+      style: "width: #{w / ratio}px; height: #{h / ratio}px;"
     # data-tooltip, disabled
     m "canvas", ma
 

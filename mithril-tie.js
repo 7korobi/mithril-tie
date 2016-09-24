@@ -1,6 +1,6 @@
 /**
  mithril-tie - browser input helper for mithril
- @version v0.0.5
+ @version v0.0.6
  @link https://github.com/7korobi/mithril-tie
  @license 
 **/
@@ -154,7 +154,6 @@
     var attr, ma;
     attr = arg.attr;
     return ma = _.assignIn(attr, {
-      config: tie._config(),
       disabled: tie.disabled,
       onsubmit: function(e) {
         tie.do_submit();
@@ -164,6 +163,10 @@
   };
 
   InputTie = (function() {
+    InputTie.util = {};
+
+    InputTie.type = {};
+
     InputTie.prototype.timeout = 1000;
 
     InputTie.prototype._debounce = function() {
@@ -179,14 +182,14 @@
 
     InputTie.prototype._config = function(input) {
       return (function(_this) {
-        return function(elem, isNew, context) {
-          return _this.config(input, elem, isNew, context);
+        return function(elem, isStay, context) {
+          return _this.config(input, elem, isStay, context);
         };
       })(this);
     };
 
-    InputTie.prototype.config = function(input, elem, isNew, context) {
-      if (isNew) {
+    InputTie.prototype.config = function(input, elem, isStay, context) {
+      if (!isStay) {
         if (elem.validity == null) {
           elem.validity = {
             valid: true
@@ -210,7 +213,7 @@
           };
         }
       }
-      return input.config(elem, isNew, context);
+      return input.config(elem, isStay, context);
     };
 
     InputTie.prototype.do_change = function(input, value) {
@@ -490,8 +493,6 @@
       }
       return results;
     };
-
-    InputTie.type = {};
 
     return InputTie;
 
@@ -816,6 +817,214 @@
 }).call(this);
 
 (function() {
+  var InputTie, Mem, OBJ, Tie, View, Views, _, m, ref,
+    slice = [].slice;
+
+  Mem = require("memory-record");
+
+  m = require("mithril");
+
+  _ = require("lodash");
+
+  ref = module.exports, InputTie = ref.InputTie, Tie = ref.Tie;
+
+  OBJ = function() {
+    return new Object(null);
+  };
+
+  Views = (function() {
+    function Views() {
+      this.data = OBJ();
+    }
+
+    Views.prototype.build = function() {
+      var type, types;
+      types = 1 <= arguments.length ? slice.call(arguments, 0) : [];
+      return this.views = (function() {
+        var i, len, results;
+        results = [];
+        for (i = 0, len = types.length; i < len; i++) {
+          type = types[i];
+          results.push(new type(this.dom));
+        }
+        return results;
+      }).call(this);
+    };
+
+    Views.prototype.draw = function(arg) {
+      var history, is_touch, offset, offsets;
+      is_touch = arg.is_touch, offset = arg.offset, offsets = arg.offsets, history = arg.history;
+    };
+
+    Views.prototype.dom = function(dom1) {
+      var ref1;
+      this.dom = dom1;
+      return ref1 = this.build(View), this._view = ref1[0], ref1;
+    };
+
+    Views.prototype.resize = function(size) {
+      this._view.fit({
+        offset: [0, 0],
+        view: [1, 1],
+        size: size
+      });
+      return this._view.clear();
+    };
+
+    Views.prototype.background = function(size) {
+      var base, image;
+      if ((base = this.data).canvas == null) {
+        base.canvas = OBJ();
+      }
+      if (image = this.data.canvas[this._view.size]) {
+        this._view.paste(image, [0, 0]);
+        return;
+      }
+      this.resize(size);
+      if (this.data) {
+        return this.data.canvas[this._view.size] = this._view.copy([0, 0], [1, 1]);
+      }
+    };
+
+    Views.prototype.hit = function(at) {
+      return _.some(this.views, function(o) {
+        return o.hit(at);
+      });
+    };
+
+    Views.prototype.touch = function(at) {
+      return this.hit(at, function(x, y) {});
+    };
+
+    Views.prototype.over = function(at) {
+      return this.hit(at, function(x, y) {});
+    };
+
+    return Views;
+
+  })();
+
+  View = (function() {
+    function View(dom) {
+      this.draw = dom.getContext("2d");
+    }
+
+    View.prototype.fit = function(arg) {
+      var offset, ref1, ref2, ref3, ref4, view;
+      ref1 = arg != null ? arg : {}, offset = ref1.offset, this.size = ref1.size, view = ref1.view;
+      ref2 = this.size, this.show_width = ref2[0], this.show_height = ref2[1];
+      ref3 = view || this.size, this.view_width = ref3[0], this.view_height = ref3[1];
+      ref4 = offset || [0, 0], this.left = ref4[0], this.top = ref4[1];
+      this.right = this.left + this.show_width;
+      this.bottom = this.top + this.show_height;
+      this.x = this.show_width / this.view_width;
+      return this.y = this.show_height / this.view_height;
+    };
+
+    View.prototype.by = function(x, y) {
+      return [(x - this.left) / this.x, (y - this.top) / this.y];
+    };
+
+    View.prototype.at = function(x, y) {
+      return [this.left + this.x * x, this.top + this.y * y];
+    };
+
+    View.prototype.to = function(x, y) {
+      return [this.x * x, this.y * y];
+    };
+
+    View.prototype.pen = function(o) {
+      return _.assignIn(this.draw, o);
+    };
+
+    View.prototype.clear = function() {
+      return this.draw.clearRect(this.left, this.top, this.right, this.bottom);
+    };
+
+    View.prototype.fill = function() {
+      return this.draw.fillRect(this.left, this.top, this.right, this.bottom);
+    };
+
+    View.prototype.paste = function(image, arg) {
+      var x, y;
+      x = arg[0], y = arg[1];
+      return this.draw.putImageData(image, x, y);
+    };
+
+    View.prototype.copy = function(a, o) {
+      var ref1, ref2, xa, xo, ya, yo;
+      ref1 = this.at.apply(this, a), xa = ref1[0], ya = ref1[1];
+      ref2 = this.to.apply(this, o), xo = ref2[0], yo = ref2[1];
+      return this.draw.getImageData(xa, ya, xo, yo);
+    };
+
+    View.prototype.text = function(str, a, width) {
+      var ref1, xa, ya;
+      ref1 = this.at.apply(this, a), xa = ref1[0], ya = ref1[1];
+      width = this.x * width - 4;
+      if (4 < width) {
+        return this.draw.fillText(str, xa, ya, width);
+      }
+    };
+
+    View.prototype.rect = function(a, b) {
+      var ref1, ref2, xa, xb, ya, yb;
+      ref1 = this.at.apply(this, a), xa = ref1[0], ya = ref1[1];
+      ref2 = this.at.apply(this, b), xb = ref2[0], yb = ref2[1];
+      return this.draw.fillRect(xa, ya, xb, yb);
+    };
+
+    View.prototype.moveTo = function() {
+      var ref1, x, y;
+      ref1 = this.at.apply(this, arguments), x = ref1[0], y = ref1[1];
+      return this.draw.moveTo(x, y);
+    };
+
+    View.prototype.lineTo = function() {
+      var ref1, x, y;
+      ref1 = this.at.apply(this, arguments), x = ref1[0], y = ref1[1];
+      return this.draw.lineTo(x, y);
+    };
+
+    View.prototype.path = function(cb) {
+      this.draw.beginPath();
+      cb(d);
+      return this.draw.stroke();
+    };
+
+    View.prototype.hit = function(a) {
+      var ref1, ref2;
+      return (this.left < (ref1 = a[0]) && ref1 < this.right) && (this.top < (ref2 = a[1]) && ref2 < this.bottom);
+    };
+
+    View.prototype.touch = function(a, cb) {
+      var ref1, x, y;
+      ref1 = this.by.apply(this, a), x = ref1[0], y = ref1[1];
+      if (this.hit(a)) {
+        return cb(x, y);
+      }
+    };
+
+    View.prototype.over = function(a, cb) {
+      var ref1, x, y;
+      ref1 = this.by.apply(this, a), x = ref1[0], y = ref1[1];
+      if (this.hit(a)) {
+        return cb(x, y);
+      }
+    };
+
+    return View;
+
+  })();
+
+  InputTie.util.canvas = {
+    View: View,
+    Views: Views
+  };
+
+}).call(this);
+
+(function() {
   var InputTie, Mem,
     extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
@@ -1026,7 +1235,7 @@
       this.option_default = _.assign({}, this.option_default, option_default);
     }
 
-    basic_input.prototype.config = function(dom, isNew, context) {
+    basic_input.prototype.config = function(dom, isStay, context) {
       this.dom = dom;
     };
 
@@ -1775,7 +1984,7 @@
 }).call(this);
 
 (function() {
-  var InputTie, Mem, OBJ, Tie, _, _pick, browser, capture, m, mouse, ref, touch, touch_A, touch_B,
+  var InputTie, Mem, OBJ, Tie, _, _pick, browser, capture, m, mouse, ratio, ref, touch, touch_A, touch_B,
     slice = [].slice,
     extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
@@ -1787,6 +1996,8 @@
   _ = require("lodash");
 
   ref = module.exports, InputTie = ref.InputTie, Tie = ref.Tie;
+
+  ratio = 2;
 
   OBJ = function() {
     return new Object(null);
@@ -1829,8 +2040,8 @@
     x = event.offsetX || event.layerX;
     y = event.offsetY || event.layerY;
     if ((x != null) && (y != null)) {
-      x *= 2;
-      y *= 2;
+      x *= ratio;
+      y *= ratio;
       return [x, y];
     }
   };
@@ -1839,8 +2050,8 @@
     var left, pageX, pageY, top, x, y;
     pageX = arg.pageX, pageY = arg.pageY;
     left = arg1.left, top = arg1.top;
-    x = 2 * (pageX - left - window.scrollX);
-    y = 2 * (pageY - top - window.scrollY);
+    x = ratio * (pageX - left - window.scrollX);
+    y = ratio * (pageY - top - window.scrollY);
     return [x, y];
   };
 
@@ -1848,8 +2059,8 @@
     var left, pageX, pageY, top, x, y;
     pageX = arg.pageX, pageY = arg.pageY;
     left = arg1.left, top = arg1.top;
-    x = 2 * (pageX - left);
-    y = 2 * (pageY - top - window.scrollY);
+    x = ratio * (pageX - left);
+    y = ratio * (pageY - top - window.scrollY);
     return [x, y];
   };
 
@@ -1868,60 +2079,55 @@
   InputTie.type.canvas = (function(superClass) {
     extend(canvas, superClass);
 
-    function canvas() {
-      return canvas.__super__.constructor.apply(this, arguments);
-    }
-
     canvas.prototype.type = "Array";
 
-    canvas.prototype.config = function(dom1, isNew, ctx1) {
-      var base, draw, h, image, ref1, ref2, size, w;
+    canvas.prototype._views = InputTie.util.canvas.Views;
+
+    function canvas() {
+      this.views = new this._views;
+      canvas.__super__.constructor.apply(this, arguments);
+    }
+
+    canvas.prototype.config = function(dom1, isStay, ctx1) {
       this.dom = dom1;
       this.ctx = ctx1;
-      if (isNew) {
-        if (this.data == null) {
-          this.data = OBJ();
-        }
-        this.ctx.draw = this.dom.getContext("2d");
+      console.warn(["config"].concat(slice.call(arguments)));
+      if (!isStay) {
+        this.views.dom(this.dom);
         this.do_blur();
       }
-      ref1 = this.ctx.size = [this.dom.width, this.dom.height], w = ref1[0], h = ref1[1];
-      ref2 = this.ctx, draw = ref2.draw, size = ref2.size;
-      if (this.data) {
-        if ((base = this.data).canvas == null) {
-          base.canvas = OBJ();
-        }
-        if (image = this.data.canvas[size]) {
-          draw.putImageData(image, 0, 0);
-          return;
-        }
-      }
-      this.do_background();
-      if (this.data) {
-        return this.data.canvas[size] = draw.getImageData(0, 0, w * 2, h * 2);
-      }
+      return this.views.background(this.size);
     };
-
-    canvas.prototype.do_background = function() {};
 
     canvas.prototype.do_draw = function() {};
 
     canvas.prototype.do_focus = function(e) {
-      return this.ctx.is_tap = true;
+      return this.ctx.is_touch = true;
     };
 
     canvas.prototype.do_blur = function(e) {
-      this.ctx.is_tap = false;
-      return this.ctx.history = [];
+      this.ctx.is_touch = false;
+      this.ctx.history = [];
+      return this.views.draw(this.ctx);
     };
 
-    canvas.prototype.do_move = function(ctx) {
-      return this.tie.do_change(this, this._value(ctx));
+    canvas.prototype.do_move = function() {
+      var history, is_touch, offset, offsets, ref1;
+      ref1 = this.ctx, is_touch = ref1.is_touch, offset = ref1.offset, offsets = ref1.offsets, history = ref1.history;
+      if (offset) {
+        if (is_touch) {
+          this.views.touch(offset);
+        } else {
+          this.views.over(offset);
+        }
+      }
+      this.views.draw(this.ctx);
+      return this.tie.do_change(this, this._value(this.ctx));
     };
 
-    canvas.prototype.do_fail = function(offsets) {};
+    canvas.prototype.do_fail = function(offset) {};
 
-    canvas.prototype.do_change = function(offsets) {};
+    canvas.prototype.do_change = function(offset) {};
 
     canvas.prototype._value = function(e) {
       return e.offset;
@@ -1941,7 +2147,7 @@
       };
       move = function(e) {
         capture(b, e);
-        return tie.do_move(b, b.ctx);
+        return b.do_move();
       };
       cancel = function(e) {
         capture(b, e);
@@ -1967,12 +2173,12 @@
       if (m_attr == null) {
         m_attr = {};
       }
-      ref1 = m_attr.size || this.attr.size, w = ref1[0], h = ref1[1];
+      ref1 = this.size = m_attr.size || this.attr.size, w = ref1[0], h = ref1[1];
       ma = this._attr(this.attr, m_attr, {
         className: [this.attr.className, m_attr.className].join(" "),
         width: w,
         height: h,
-        style: "width: " + (w / 2) + "px; height: " + (h / 2) + "px;"
+        style: "width: " + (w / ratio) + "px; height: " + (h / ratio) + "px;"
       });
       return m("canvas", ma);
     };
@@ -1984,7 +2190,7 @@
 }).call(this);
 
 (function() {
-  var InputTie, Mem, OBJ, Tie, _, m, mestype_orders, ref, timespan,
+  var InputTie, Mem, OBJ, Tie, Timeline, View, Views, _, m, mestype_orders, ref, ref1, timespan,
     extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
 
@@ -2004,6 +2210,164 @@
 
   mestype_orders = ["SAY", "MSAY", "VSAY", "VGSAY", "GSAY", "SPSAY", "WSAY", "XSAY", "BSAY", "AIM", "TSAY", "MAKER", "ADMIN"];
 
+  ref1 = InputTie.util.canvas, View = ref1.View, Views = ref1.Views;
+
+  Timeline = (function(superClass) {
+    extend(Timeline, superClass);
+
+    function Timeline() {
+      return Timeline.__super__.constructor.apply(this, arguments);
+    }
+
+    Timeline.prototype.dom = function(dom) {
+      var ref2;
+      this.dom = dom;
+      Timeline.__super__.dom.apply(this, arguments);
+      return ref2 = this.build(View, View), this.field = ref2[0], this.foots = ref2[1], ref2;
+    };
+
+    Timeline.prototype.resize = function(size) {
+      var height, heights, i, j, left, len, len1, mask, max_height, mestype, time_id, top, width;
+      Timeline.__super__.resize.apply(this, arguments);
+      this.base = Mem.Query.messages.talk(talk(), open(), potofs_hide());
+      if (!base.reduce) {
+        return;
+      }
+      this.masks = this.base.reduce.mask || {};
+      heights = (function() {
+        var ref2, results;
+        ref2 = this.masks;
+        results = [];
+        for (time_id in ref2) {
+          mask = ref2[time_id];
+          results.push(mask.all.count);
+        }
+        return results;
+      }).call(this);
+      max_height = Math.max.apply(Math, heights);
+      this.time_ids = _.sortBy(Object.keys(this.masks), Mem.unpack.Date);
+      width = size[0], height = size[1];
+      this.field.fit({
+        size: [width, height - 50],
+        view: [this.time_ids.length, max_height]
+      });
+      this.foots.fit({
+        offset: [0, height - 50],
+        size: [width, 50],
+        view: [this.time_ids.length, 1]
+      });
+      this.field.pen({
+        fillStyle: RAILS.log.colors.back,
+        globalAlpha: 0.5
+      });
+      this.field.fill();
+      for (left = i = 0, len = time_ids.length; i < len; left = ++i) {
+        time_id = time_ids[left];
+        mask = masks[time_id];
+        top = max_height;
+        for (j = 0, len1 = mestype_orders.length; j < len1; j++) {
+          mestype = mestype_orders[j];
+          if (!mask[mestype]) {
+            continue;
+          }
+          height = mask[mestype].count;
+          top -= height;
+          this.field.pen({
+            fillStyle: RAILS.log.colors[mestype],
+            globalAlpha: 1
+          });
+          this.field.rect([left, top], [1, height]);
+        }
+      }
+      return this.foots.path((function(_this) {
+        return function() {
+          var event, k, len2, ref2, results, right;
+          ref2 = Mem.Query.events.list;
+          results = [];
+          for (k = 0, len2 = ref2.length; k < len2; k++) {
+            event = ref2[k];
+            if (!event.created_at) {
+              continue;
+            }
+            right = index_at(event.updated_at);
+            left = index_at(event.created_at);
+            _this.foots.pen({
+              strokeStyle: RAILS.log.colors.line,
+              globalAlpha: 1
+            });
+            _this.foots.moveTo(left, 1);
+            _this.foots.lineTo(left, 0);
+            _this.foots.moveTo(right, 1);
+            _this.foots.lineTo(right, 0);
+            _this.foots.pen({
+              fillStyle: RAILS.log.colors.event
+            });
+            _this.foots.fill();
+            _this.foots.pen({
+              font: "30px serif",
+              textAlign: "left",
+              fillStyle: RAILS.log.colors.text
+            });
+            results.push(_this.foots.text(event.name, [left, 38], right - left));
+          }
+          return results;
+        };
+      })(this));
+    };
+
+    Timeline.prototype.draw = function(ctx) {
+      var focus, x;
+      this.ctx = ctx;
+      focus = Mem.Query.messages.find(Url.params.talk_at);
+      if (!focus) {
+        return;
+      }
+      x = this.index(focus.updated_at);
+      return this.field.path((function(_this) {
+        return function() {
+          _this.field.pen({
+            strokeStyle: RAILS.log.colors.focus,
+            globalAlpha: 1
+          });
+          _this.field.moveTo(x, _this.show_height);
+          return _this.field.lineTo(x, 0);
+        };
+      })(this));
+    };
+
+    Timeline.prototype.index = function(updated_at) {
+      return this.time_ids.indexOf(Mem.pack.Date(updated_at / timespan));
+    };
+
+    Timeline.prototype.choice = function(x, query) {
+      var index, o;
+      index = Math.floor(x);
+      o = this.masks[this.time_ids[index]].all.min_is;
+      Url.params.talk_at = o._id;
+      Url.params.icon("search");
+      Url.params.scope("talk");
+      Url.params.scroll("");
+      return win.scroll.rescroll(Url.prop.talk_at);
+    };
+
+    Timeline.prototype.touch = function(at) {
+      Url.params.search = "";
+      this.field.touch(at, (function(_this) {
+        return function(x) {
+          return _this.choice(x, base);
+        };
+      })(this));
+      return this.foots.touch(at, (function(_this) {
+        return function(x) {
+          return _this.choice(x, Mem.Query.messages.talk("open", false, {}));
+        };
+      })(this));
+    };
+
+    return Timeline;
+
+  })(Views);
+
   InputTie.type.timeline = (function(superClass) {
     extend(timeline, superClass);
 
@@ -2013,113 +2377,7 @@
 
     timeline.prototype.type = "Array";
 
-    timeline.prototype.do_draw = function() {};
-
-    timeline.prototype.do_focus = function(e) {
-      return this.ctx.is_tap = true;
-    };
-
-    timeline.prototype.do_blur = function(e) {
-      this.ctx.is_tap = false;
-      return this.ctx.history = [];
-    };
-
-    timeline.prototype.do_move = function(ctx) {};
-
-    timeline.prototype.do_fail = function(offsets) {};
-
-    timeline.prototype.do_change = function(offsets) {};
-
-    timeline.prototype._value = function(e) {
-      return e.offsets;
-    };
-
-    timeline.prototype.data = function() {
-      view_port_x();
-      return base.reduce;
-    };
-
-    timeline.prototype.onmove = function(arg) {
-      var index, is_touch, offset, query, state, time;
-      state = arg.state, is_touch = arg.is_touch, offset = arg.offset;
-      if (!(is_touch && (offset != null) && view_port_x())) {
-        return;
-      }
-      search("");
-      index = Math.floor(offset.x / x);
-      time = masks[time_ids[index]].all.min;
-      query = graph_height < offset.y ? Mem.Query.messages.talk("open", false, {}) : base;
-      return choice_last(query, time);
-    };
-
-    timeline.prototype.draw = function(arg) {
-      var ctx, focus, offset;
-      ctx = arg.ctx;
-      focus = Mem.Query.messages.find(talk_at());
-      if (!(focus && view_port_x())) {
-        return;
-      }
-      offset = index_at(focus.updated_at);
-      ctx.beginPath();
-      ctx.strokeStyle = RAILS.log.colors.focus;
-      ctx.globalAlpha = 1;
-      ctx.moveTo(x * offset, height);
-      ctx.lineTo(x * offset, 0);
-      return ctx.stroke();
-    };
-
-    timeline.prototype.background = function(arg) {
-      var color, count_height, count_width, ctx, event, i, j, k, left, len, len1, len2, mask, max_width, mestype, ref1, right, time_id, top;
-      ctx = arg.ctx;
-      if (!(view_port_x() && view_port_y())) {
-        return;
-      }
-      ctx.clearRect(0, 0, width, height);
-      ctx.fillStyle = RAILS.log.colors.back;
-      ctx.globalAlpha = 0.5;
-      ctx.fillRect(0, 0, x * time_width, y * max_height);
-      count_width = 1;
-      for (left = i = 0, len = time_ids.length; i < len; left = ++i) {
-        time_id = time_ids[left];
-        mask = masks[time_id];
-        top = max_height;
-        for (j = 0, len1 = mestype_orders.length; j < len1; j++) {
-          mestype = mestype_orders[j];
-          color = RAILS.log.colors[mestype];
-          if (mask[mestype]) {
-            count_height = mask[mestype].count;
-            top -= count_height;
-            ctx.fillStyle = color;
-            ctx.globalAlpha = 1;
-            ctx.fillRect(x * left, y * top, 1 + x * count_width, y * count_height);
-          }
-        }
-      }
-      ctx.beginPath();
-      ref1 = Mem.Query.events.list;
-      for (k = 0, len2 = ref1.length; k < len2; k++) {
-        event = ref1[k];
-        if (!event.created_at) {
-          continue;
-        }
-        right = index_at(event.updated_at);
-        left = index_at(event.created_at);
-        ctx.strokeStyle = RAILS.log.colors.line;
-        ctx.globalAlpha = 1;
-        ctx.moveTo(x * left, height);
-        ctx.lineTo(x * left, 0);
-        ctx.fillStyle = RAILS.log.colors.event;
-        ctx.fillRect(x * left, graph_height, x * time_width, height);
-        ctx.textAlign = "left";
-        ctx.fillStyle = RAILS.log.colors.text;
-        ctx.font = "30px serif";
-        max_width = x * (right - left) - 4;
-        if (0 < max_width) {
-          ctx.fillText(event.name, x * left, height - 12, max_width);
-        }
-      }
-      return ctx.stroke();
-    };
+    timeline.prototype._graph = Timeline;
 
     return timeline;
 

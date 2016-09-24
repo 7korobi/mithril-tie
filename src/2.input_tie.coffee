@@ -8,7 +8,6 @@ submit_pick = (attrs...)->
 
 _attr_form = (tie, { attr })->
   ma = _.assignIn attr,
-    config: tie._config()
     disabled: tie.disabled
     onsubmit: (e)->
       tie.do_submit()
@@ -16,6 +15,9 @@ _attr_form = (tie, { attr })->
 
 
 class InputTie
+  @util = {}
+  @type = {}
+
   timeout: 1000
   _debounce: ->
     @timer = true
@@ -25,11 +27,11 @@ class InputTie
       , @timeout
 
   _config: (input)->
-    (elem, isNew, context)=>
-      @config input, elem, isNew, context
+    (elem, isStay, context)=>
+      @config input, elem, isStay, context
 
-  config: (input, elem, isNew, context)->
-    if isNew
+  config: (input, elem, isStay, context)->
+    unless isStay
       elem.validity ?=
         valid: true
       elem.checkValidity ?= ->
@@ -42,7 +44,7 @@ class InputTie
           @validity.customError = false
           @validity.valid = true
 
-    input.config elem, isNew, context
+    input.config elem, isStay, context
 
   do_change: (input, value)->
     value = input.__val value
@@ -217,6 +219,5 @@ class InputTie
         else
           { _id, label }
 
-  @type = {}
 
 module.exports.InputTie = InputTie

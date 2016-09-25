@@ -3,7 +3,7 @@ m = require "mithril"
 _ = require "lodash"
 { InputTie, Tie } = module.exports
 
-ratio = 2
+ratio = window.devicePixelRatio
 
 OBJ = ->
   new Object null
@@ -62,11 +62,10 @@ class InputTie.type.canvas extends InputTie.type.hidden
   _views: InputTie.util.canvas.Views
 
   constructor: ->
-    @views = new @_views
+    @views = new @_views @
     super
 
   config: (@dom, isStay, @ctx)->
-    console.warn ["config", arguments...]
     unless isStay
       @views.dom @dom
       @do_blur()

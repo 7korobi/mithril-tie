@@ -2,6 +2,7 @@
 global.window =
   scrollX: 0
   scrollY: 0
+  devicePixelRatio: 2
   requestAnimationFrame: ->
 global.localStorage =
   getItem: ->

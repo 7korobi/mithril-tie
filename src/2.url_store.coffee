@@ -8,7 +8,6 @@ encode = Mem.pack.Url
 state = _.debounce ->
   params = Url.location()
   if decode(location.href) != decode(params.href)
-    console.warn "url changed."
     if history?
       history[Url.mode] "URL", null, params.href
 

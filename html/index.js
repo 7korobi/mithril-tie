@@ -54212,7 +54212,6 @@
 	    var params;
 	    params = Url.location();
 	    if (decode(location.href) !== decode(params.href)) {
-	      console.warn("url changed.");
 	      if (typeof history !== "undefined" && history !== null) {
 	        history[Url.mode]("URL", null, params.href);
 	      }
@@ -55690,7 +55689,7 @@
 	
 	  ref = module.exports, InputTie = ref.InputTie, Tie = ref.Tie;
 	
-	  ratio = 2;
+	  ratio = window.devicePixelRatio;
 	
 	  OBJ = function() {
 	    return new Object(null);
@@ -55777,14 +55776,13 @@
 	    canvas.prototype._views = InputTie.util.canvas.Views;
 	
 	    function canvas() {
-	      this.views = new this._views;
+	      this.views = new this._views(this);
 	      canvas.__super__.constructor.apply(this, arguments);
 	    }
 	
 	    canvas.prototype.config = function(dom1, isStay, ctx1) {
 	      this.dom = dom1;
 	      this.ctx = ctx1;
-	      console.warn(["config"].concat(slice.call(arguments)));
 	      if (!isStay) {
 	        this.views.dom(this.dom);
 	        this.do_blur();
@@ -56075,6 +56073,128 @@
 	    return timeline;
 	
 	  })(InputTie.type.canvas);
+	
+	}).call(this);
+	
+	(function() {
+	  var Fabric, InputTie, OBJ, Tie, _pick, m, new_canvas, ratio, ref,
+	    slice = [].slice,
+	    extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+	    hasProp = {}.hasOwnProperty;
+	
+	  m = __webpack_require__(43);
+	
+	  ref = module.exports, InputTie = ref.InputTie, Tie = ref.Tie;
+	
+	  ratio = window.devicePixelRatio;
+	
+	  OBJ = function() {
+	    return new Object(null);
+	  };
+	
+	  _pick = function(attrs, last) {
+	    return _.assignIn.apply(_, [{}].concat(slice.call(attrs), [last]));
+	  };
+	
+	  new_canvas = function(dom) {
+	    return new fabric.Canvas(dom, {
+	      enableRetinaScaling: true
+	    });
+	  };
+	
+	  Fabric = (function() {
+	    function Fabric(tie1, input) {
+	      this.tie = tie1;
+	      this.input = input;
+	      this.data = OBJ();
+	    }
+	
+	    Fabric.prototype.deploy = function(canvas, size) {};
+	
+	    Fabric.prototype.redraw = function(canvas, size) {};
+	
+	    Fabric.prototype.resize = function(canvas, size) {};
+	
+	    return Fabric;
+	
+	  })();
+	
+	  InputTie.type.fabric = (function(superClass) {
+	    extend(fabric, superClass);
+	
+	    fabric.extend = function(cb) {
+	      return cb(Fabric, this);
+	    };
+	
+	    fabric.prototype.type = "Array";
+	
+	    fabric.prototype._views = Fabric;
+	
+	    function fabric() {
+	      this.size_old = [0, 0];
+	      this.view = new this._views(this.tie, this);
+	      fabric.__super__.constructor.apply(this, arguments);
+	    }
+	
+	    fabric.prototype.config = function(dom, isStay, ctx) {
+	      var height, ref1, width;
+	      ref1 = this.size, width = ref1[0], height = ref1[1];
+	      if (!isStay) {
+	        this.canvas = new_canvas(dom);
+	        this.view.deploy(this.canvas, this.size);
+	      }
+	      if (this.size[0] === this.size_old[0] && this.size[1] === this.size_old[1]) {
+	        this.canvas.renderAll();
+	        this.view.redraw(this.canvas, this.size);
+	      } else {
+	        this.canvas.setWidth(width);
+	        this.canvas.setHeight(height);
+	        console.log("resize " + [width, height]);
+	        this.view.resize(this.canvas, this.size);
+	      }
+	      return this.size_old = this.size;
+	    };
+	
+	    fabric.prototype.do_draw = function() {};
+	
+	    fabric.prototype.do_focus = function(e) {};
+	
+	    fabric.prototype.do_blur = function(e) {};
+	
+	    fabric.prototype.do_fail = function(offset) {};
+	
+	    fabric.prototype.do_change = function(offset) {};
+	
+	    fabric.prototype._value = function(e) {
+	      return e.offset;
+	    };
+	
+	    fabric.prototype._attr = function() {
+	      var _value, attrs, b, ctx, ma, ref1, tie;
+	      attrs = 1 <= arguments.length ? slice.call(arguments, 0) : [];
+	      ref1 = b = this, _value = ref1._value, tie = ref1.tie, ctx = ref1.ctx;
+	      return ma = _pick(attrs, {
+	        config: this._config
+	      });
+	    };
+	
+	    fabric.prototype.field = function(m_attr) {
+	      var h, ma, ref1, w;
+	      if (m_attr == null) {
+	        m_attr = {};
+	      }
+	      ref1 = this.size = m_attr.size || this.attr.size, w = ref1[0], h = ref1[1];
+	      ma = this._attr(this.attr, m_attr, {
+	        className: [this.attr.className, m_attr.className].join(" "),
+	        width: w,
+	        height: h
+	      });
+	      return m("canvas", ma);
+	    };
+	
+	    return fabric;
+	
+	  })(InputTie.type.hidden);
 	
 	}).call(this);
 	

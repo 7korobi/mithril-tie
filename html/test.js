@@ -9,7 +9,7 @@
   ratio = window.devicePixelRatio;
 
   InputTie.type.fabric.extend("my_fabric", view = (function() {
-    view.prototype.type = "Array";
+    view.prototype.type = "String";
 
     view.prototype.do_draw = function() {};
 
@@ -19,7 +19,9 @@
 
     view.prototype.do_fail = function(offset) {};
 
-    view.prototype.do_change = function(offset) {};
+    view.prototype.do_change = function(args) {
+      return console.warn(args);
+    };
 
     function view(tie1, input) {
       this.tie = tie1;
@@ -40,6 +42,14 @@
         strokeWidth: 5,
         stroke: 'rgba(100,200,200,0.5)'
       });
+      this.rect.on({
+        mouseup: (function(_this) {
+          return function() {
+            _this.input.attr.size = [600, 600];
+            return _this.tie.do_change(_this, "rect");
+          };
+        })(this)
+      });
       this.circle = new fabric.Circle({
         left: 100,
         top: 100,
@@ -49,6 +59,7 @@
         stroke: 'rgba(100,200,200,0.5)'
       });
       this.circle.setGradient("fill", {
+        type: "linear",
         x1: 0,
         y1: 0,
         x2: 0,
@@ -58,6 +69,14 @@
           0.5: '#fff',
           1.0: '#000'
         }
+      });
+      this.circle.on({
+        mouseup: (function(_this) {
+          return function() {
+            _this.input.attr.size = [800, 600];
+            return _this.tie.do_change(_this, "circle");
+          };
+        })(this)
       });
       this.haiku = new fabric.Text("古池や\n蛙飛び込む\n水の音", {
         fontFamily: '花園明朝A',
@@ -112,13 +131,6 @@
         });
         return h;
       };
-      this.rect.on({
-        mouseup: (function(_this) {
-          return function() {
-            return _this.input.attr.size = [600, 600];
-          };
-        })(this)
-      });
       this.circle.on(logger("circle", ["touch:gesture", "touch:drag", "touch:orientation", "touch:shake", "touch:longpress", "added", "removed", "selected", "deselected", "modified", "rotating", "scaling", "moving", "skewing", "mousedown", "mouseup", "mouseover", "mouseout"]));
       canvas.on(logger("canvas", ["object:added", "object:modified", "object:rotating", "object:scaling", "object:moving", "object:selected", "before:selection:cleared", "selection:cleared", "selection:created", "path:created"]));
       canvas.add(this.rect);

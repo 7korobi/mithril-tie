@@ -4,13 +4,14 @@ OBJ = ->
 ratio = window.devicePixelRatio
 
 InputTie.type.fabric.extend "my_fabric", class view
-  type: "Array"
+  type: "String"
 
   do_draw: ->
   do_focus: (e)->
   do_blur:  (e)->
   do_fail:   (offset)->
-  do_change: (offset)->
+  do_change: (args)->
+    console.warn args
 
   constructor: (@tie, @input)->
 
@@ -26,6 +27,10 @@ InputTie.type.fabric.extend "my_fabric", class view
       rx: 10
       strokeWidth: 5
       stroke: 'rgba(100,200,200,0.5)'
+    @rect.on
+      mouseup: =>
+        @input.attr.size = [600,600]
+        @tie.do_change @, "rect"
 
     @circle = new fabric.Circle
       left:  100
@@ -35,6 +40,7 @@ InputTie.type.fabric.extend "my_fabric", class view
       strokeWidth: 5
       stroke: 'rgba(100,200,200,0.5)'
     @circle.setGradient "fill",
+      type: "linear"
       x1: 0
       y1: 0
       x2: 0
@@ -43,6 +49,10 @@ InputTie.type.fabric.extend "my_fabric", class view
         0.0: '#000'
         0.5: '#fff'
         1.0: '#000'
+    @circle.on 
+      mouseup: =>
+        @input.attr.size = [800,600]
+        @tie.do_change @, "circle"
 
     @haiku = new fabric.Text """
         古池や
@@ -89,10 +99,6 @@ InputTie.type.fabric.extend "my_fabric", class view
           e = [title, key, arguments...]
           call()
       h
-
-    @rect.on 
-      mouseup: =>
-        @input.attr.size = [600,600]
 
     @circle.on logger "circle", [
       "touch:gesture"

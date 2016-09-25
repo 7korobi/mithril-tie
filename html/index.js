@@ -56077,7 +56077,7 @@
 	}).call(this);
 	
 	(function() {
-	  var Fabric, InputTie, Tie, _pick, m, new_canvas, ratio, ref,
+	  var Fabric, InputTie, Tie, _pick, chk_canvas, m, new_canvas, ratio, ref,
 	    slice = [].slice,
 	    extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
 	    hasProp = {}.hasOwnProperty;
@@ -56096,6 +56096,12 @@
 	    return new fabric.Canvas(dom, {
 	      enableRetinaScaling: true
 	    });
+	  };
+	
+	  chk_canvas = function() {
+	    if (!fabric) {
+	      throw "require fabric.js";
+	    }
 	  };
 	
 	  Fabric = (function() {
@@ -56128,6 +56134,7 @@
 	    extend(fabric, superClass);
 	
 	    fabric.extend = function(name, view) {
+	      chk_canvas();
 	      return InputTie.type[name] = (function(superClass1) {
 	        extend(_Class, superClass1);
 	
@@ -56137,7 +56144,7 @@
 	
 	        _Class.prototype.type = view.prototype.type;
 	
-	        _Class.prototype._views = view;
+	        _Class.prototype._view = view;
 	
 	        return _Class;
 	
@@ -56146,12 +56153,13 @@
 	
 	    fabric.prototype.type = "Array";
 	
-	    fabric.prototype._views = Fabric;
+	    fabric.prototype._view = Fabric;
 	
 	    function fabric() {
-	      this.size_old = [0, 0];
-	      this.view = new this._views(this.tie, this);
 	      fabric.__super__.constructor.apply(this, arguments);
+	      this.size_old = [0, 0];
+	      this.view = new this._view(this.tie, this);
+	      this.view.__val = this.__val;
 	    }
 	
 	    fabric.prototype.config = function(dom, isStay, ctx) {

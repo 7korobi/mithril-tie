@@ -10,6 +10,10 @@ new_canvas = (dom)->
   new fabric.Canvas dom,
     enableRetinaScaling: true
 
+chk_canvas = ->
+  unless fabric
+    throw "require fabric.js"
+
 
 class Fabric
   do_draw: ->
@@ -26,17 +30,19 @@ class Fabric
 
 class InputTie.type.fabric extends InputTie.type.hidden
   @extend: (name, view)->
+    chk_canvas()
     class InputTie.type[name] extends @
       type: view.prototype.type
-      _views: view
+      _view: view
 
   type: "Array"
-  _views: Fabric
+  _view: Fabric
 
   constructor: ->
-    @size_old = [0,0]
-    @view = new @_views @tie, @
     super
+    @size_old = [0,0]
+    @view = new @_view @tie, @
+    @view.__val = @__val
 
   config: (dom, isStay, ctx)->
     [ width, height ] = @size

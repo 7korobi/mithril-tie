@@ -3,158 +3,149 @@ OBJ = ->
 
 ratio = window.devicePixelRatio
 
-InputTie.type.fabric.extend (view, input)->
+InputTie.type.fabric.extend "my_fabric", class view
+  type: "Array"
 
-  class view
-    constructor: (@tie, @input)->
+  do_draw: ->
+  do_focus: (e)->
+  do_blur:  (e)->
+  do_fail:   (offset)->
+  do_change: (offset)->
 
-    deploy: (canvas, size)->
-      [ width, height ] = size
-      @rect = new fabric.Rect
-        left: 100
-        top:  100
-        fill: "blue"
-        width:  200
-        height: 200
-        angle: 45
-        rx: 10
-        strokeWidth: 5
-        stroke: 'rgba(100,200,200,0.5)'
+  constructor: (@tie, @input)->
 
-      @circle = new fabric.Circle
-        left:  100
-        top:   100
-        radius: 50
-        angle:  30
-        strokeWidth: 5
-        stroke: 'rgba(100,200,200,0.5)'
-      ->
-        @circle.setGradientFill
-          x1: 0
-          y1: 0
-          x2: 0
-          y2: @circle.height
-          colorStops:
-            0.0: '#000'
-            0.5: '#fff'
-            1.0: '#000'
+  deploy: (canvas, size)->
+    [ width, height ] = size
+    @rect = new fabric.Rect
+      left: 100
+      top:  100
+      fill: "blue"
+      width:  200
+      height: 200
+      angle: 45
+      rx: 10
+      strokeWidth: 5
+      stroke: 'rgba(100,200,200,0.5)'
 
-      @haiku = new fabric.Text """
-          古池や
-          蛙飛び込む
-          水の音
-        """,
-        fontFamily: '花園明朝A'
-        fontSize:   50
-        strokeWidth: 2
-        strokeStyle: '#008811'
-        fill:        "#00aa22"
-        left:  200
-        top:  100
-        angle: 10
+    @circle = new fabric.Circle
+      left:  100
+      top:   100
+      radius: 50
+      angle:  30
+      strokeWidth: 5
+      stroke: 'rgba(100,200,200,0.5)'
+    @circle.setGradient "fill",
+      x1: 0
+      y1: 0
+      x2: 0
+      y2: @circle.height
+      colorStops:
+        0.0: '#000'
+        0.5: '#fff'
+        1.0: '#000'
 
-      fabric.Image.fromURL 'http://giji-assets.s3-website-ap-northeast-1.amazonaws.com/images/portrate/g04.jpg', (@face)=>
-        requestAnimationFrame =>
-          @face.animate "left",  width - 100,
-            duration: 2000
-            easing: fabric.util.ease.easeOutBounce
-          @face.animate "top",   height -  30,
-            duration: 2000
-            easing: fabric.util.ease.easeInBounce
-          @face.animate "angle",    -300,
-            duration: 1000
-            easing: fabric.util.ease.easeInElastic
-          @face.animate "angle",     100,
-            duration: 3000
-            easing: fabric.util.ease.easeOutElastic
-            onChange: ->
-              canvas.renderAll()
-        canvas.add @face
+    @haiku = new fabric.Text """
+        古池や
+        蛙飛び込む
+        水の音
+      """,
+      fontFamily: '花園明朝A'
+      fontSize:   50
+      strokeWidth: 2
+      strokeStyle: '#008811'
+      fill:        "#00aa22"
+      left:  200
+      top:  100
+      angle: 10
 
-      logger = (title, list)->
-        h = {}
-        e = []
-        call = _.debounce ->
-          m.redraw()
-          console.warn e
-        , 200
+    fabric.Image.fromURL 'http://giji-assets.s3-website-ap-northeast-1.amazonaws.com/images/portrate/g04.jpg', (@face)=>
+      requestAnimationFrame =>
+        @face.animate "left",  width - 100,
+          duration: 2000
+          easing: fabric.util.ease.easeOutBounce
+        @face.animate "top",   height -  30,
+          duration: 2000
+          easing: fabric.util.ease.easeInBounce
+        @face.animate "angle",    -300,
+          duration: 1000
+          easing: fabric.util.ease.easeInElastic
+        @face.animate "angle",     100,
+          duration: 3000
+          easing: fabric.util.ease.easeOutElastic
+          onChange: ->
+            canvas.renderAll()
+      canvas.add @face
 
-        list.map (key)->
-          h[key] = ->
-            e = [title, key, arguments...]
-            call()
-        h
+    logger = (title, list)->
+      h = {}
+      e = []
+      call = _.debounce ->
+        m.redraw()
+        console.warn e
+      , 200
 
-      @rect.on 
-        mouseup: =>
-          @input.attr.size = [600,600]
+      list.map (key)->
+        h[key] = ->
+          e = [title, key, arguments...]
+          call()
+      h
 
-      @circle.on logger "circle", [
-        "touch:gesture"
-        "touch:drag"
-        "touch:orientation"
-        "touch:shake"
-        "touch:longpress"
-        "added"
-        "removed"
-        "selected"
-        "deselected"
-        "modified"
-        "rotating"
-        "scaling"
-        "moving"
-        "skewing"
-        "mousedown"
-        "mouseup"
-        "mouseover"
-        "mouseout"
-      ]
-      canvas.on logger "canvas", [
-        "object:added"
-        "object:modified"
-        "object:rotating"
-        "object:scaling"
-        "object:moving"
-        "object:selected"
-        "before:selection:cleared"
-        "selection:cleared"
-        "selection:created"
-        "path:created"
-        # "mouse:down"
-        # "mouse:move"
-        # "mouse:up"
-        # "mouse:over"
-        # "mouse:out"
-      ]
+    @rect.on 
+      mouseup: =>
+        @input.attr.size = [600,600]
 
-    redraw: (canvas, size)->
-      [ width, height ] = size
+    @circle.on logger "circle", [
+      "touch:gesture"
+      "touch:drag"
+      "touch:orientation"
+      "touch:shake"
+      "touch:longpress"
+      "added"
+      "removed"
+      "selected"
+      "deselected"
+      "modified"
+      "rotating"
+      "scaling"
+      "moving"
+      "skewing"
+      "mousedown"
+      "mouseup"
+      "mouseover"
+      "mouseout"
+    ]
+    canvas.on logger "canvas", [
+      "object:added"
+      "object:modified"
+      "object:rotating"
+      "object:scaling"
+      "object:moving"
+      "object:selected"
+      "before:selection:cleared"
+      "selection:cleared"
+      "selection:created"
+      "path:created"
+      # "mouse:down"
+      # "mouse:move"
+      # "mouse:up"
+      # "mouse:over"
+      # "mouse:out"
+    ]
+    canvas.add @rect
+    canvas.add @circle
+    canvas.add @haiku
 
-    resize: (canvas, size)->
-      [ width, height ] = size
-      canvas.add @rect
-      canvas.add @circle
-      canvas.add @haiku
-      canvas.add @face if @face
+  redraw: (canvas, size)->
+    [ width, height ] = size
 
-      return
-      fabric.loadSVGFromURL 'file://japanHigh.svg', (objs, options)=>
-        @japan = fabric.util.groupSVGElements objs, options
-        canvas.add @japan
+  resize: (canvas, size)->
+    [ width, height ] = size
 
+    return
+    fabric.loadSVGFromURL 'file://japanHigh.svg', (objs, options)=>
+      @japan = fabric.util.groupSVGElements objs, options
+      canvas.add @japan
 
-  class InputTie.type.my_fabric extends input
-    type: "Array"
-
-    _views: view
-    _value: (e)->
-      e.offset
-
-    do_draw: ->
-    do_focus: (e)->
-    do_blur:  (e)->
-    do_fail:   (offset)->
-    do_change: (offset)->
 
 
 Demo =
@@ -163,14 +154,14 @@ Demo =
     @tie.stay = (id, value)->
     @tie.change = (id, value, old)->
     @tie.focus = ->
-      console.warn ["focus", arguments...]
+      console.warn ["focus",   arguments...]
     @tie.disable = ->
       console.warn ["disable", arguments...]
     @tie.stay = ->
-      console.warn ["stay", arguments...]
+      console.warn ["stay",    arguments...]
     @tie.change = ->
     @tie.select = ->
-      console.warn ["select", arguments...]
+      console.warn ["select",  arguments...]
 
     @bundles = [
       @tie.bundle

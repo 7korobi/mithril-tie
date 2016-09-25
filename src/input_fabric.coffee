@@ -3,9 +3,6 @@ m = require "mithril"
 
 ratio = window.devicePixelRatio
 
-OBJ = ->
-  new Object null
-
 _pick = (attrs, last)->
   _.assignIn {}, attrs..., last
 
@@ -15,17 +12,23 @@ new_canvas = (dom)->
 
 
 class Fabric
-  constructor: (@tie, @input)->
-    @data = OBJ()
+  do_draw: ->
+  do_focus: (e)->
+  do_blur:  (e)->
+  do_fail:   (offset)->
+  do_change: (offset)->
 
+  constructor: (@tie, @input)->
   deploy: (canvas, size)->
   redraw: (canvas, size)->
   resize: (canvas, size)->
 
 
 class InputTie.type.fabric extends InputTie.type.hidden
-  @extend: (cb)->
-    cb Fabric, @
+  @extend: (name, view)->
+    class InputTie.type[name] extends @
+      type: view.prototype.type
+      _views: view
 
   type: "Array"
   _views: Fabric

@@ -2384,7 +2384,7 @@
 }).call(this);
 
 (function() {
-  var Fabric, InputTie, OBJ, Tie, _pick, m, new_canvas, ratio, ref,
+  var Fabric, InputTie, Tie, _pick, m, new_canvas, ratio, ref,
     slice = [].slice,
     extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
@@ -2394,10 +2394,6 @@
   ref = module.exports, InputTie = ref.InputTie, Tie = ref.Tie;
 
   ratio = window.devicePixelRatio;
-
-  OBJ = function() {
-    return new Object(null);
-  };
 
   _pick = function(attrs, last) {
     return _.assignIn.apply(_, [{}].concat(slice.call(attrs), [last]));
@@ -2410,10 +2406,19 @@
   };
 
   Fabric = (function() {
+    Fabric.prototype.do_draw = function() {};
+
+    Fabric.prototype.do_focus = function(e) {};
+
+    Fabric.prototype.do_blur = function(e) {};
+
+    Fabric.prototype.do_fail = function(offset) {};
+
+    Fabric.prototype.do_change = function(offset) {};
+
     function Fabric(tie1, input) {
       this.tie = tie1;
       this.input = input;
-      this.data = OBJ();
     }
 
     Fabric.prototype.deploy = function(canvas, size) {};
@@ -2429,8 +2434,21 @@
   InputTie.type.fabric = (function(superClass) {
     extend(fabric, superClass);
 
-    fabric.extend = function(cb) {
-      return cb(Fabric, this);
+    fabric.extend = function(name, view) {
+      return InputTie.type[name] = (function(superClass1) {
+        extend(_Class, superClass1);
+
+        function _Class() {
+          return _Class.__super__.constructor.apply(this, arguments);
+        }
+
+        _Class.prototype.type = view.prototype.type;
+
+        _Class.prototype._views = view;
+
+        return _Class;
+
+      })(this);
     };
 
     fabric.prototype.type = "Array";

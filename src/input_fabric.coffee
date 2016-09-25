@@ -16,6 +16,8 @@ chk_canvas = ->
 
 
 class Fabric
+  type: "String"
+
   do_draw: ->
   do_focus: (e)->
   do_blur:  (e)->

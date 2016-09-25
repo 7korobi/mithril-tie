@@ -49,7 +49,7 @@ InputTie.type.fabric.extend "my_fabric", class view
         0.0: '#000'
         0.5: '#fff'
         1.0: '#000'
-    @circle.on 
+    @circle.on
       mouseup: =>
         @input.attr.size = [800,600]
         @tie.do_change @, "circle"

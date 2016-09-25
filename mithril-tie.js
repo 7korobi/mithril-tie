@@ -2412,6 +2412,8 @@
   };
 
   Fabric = (function() {
+    Fabric.prototype.type = "String";
+
     Fabric.prototype.do_draw = function() {};
 
     Fabric.prototype.do_focus = function(e) {};

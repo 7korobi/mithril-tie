@@ -206,7 +206,6 @@ describe "InputTie.type.text", ->
     attrs.config elem, true, context
     attrs.onblur {}
 
-    console.warn tie.dom
     expect( params.t2 ).to.eq "abcdefg"
     expect( state.stay ).to.eq undefined
     expect( state.change ).to.eq "abcdefg"

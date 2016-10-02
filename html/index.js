@@ -53844,10 +53844,28 @@
 	  };
 	
 	  _attr_form = function(tie, arg) {
-	    var attr, ma;
+	    var attr, config, ma;
 	    attr = arg.attr;
+	    config = function(elem, isStay, context) {
+	      tie.dom = elem;
+	      if (!isStay) {
+	        return elem.checkValidity != null ? elem.checkValidity : elem.checkValidity = function() {
+	          var i, input, len, ref;
+	          ref = tie._inputs;
+	          for (i = 0, len = ref.length; i < len; i++) {
+	            input = ref[i];
+	            if (input.dom) {
+	              if (!input.dom.checkValidity()) {
+	                return false;
+	              }
+	            }
+	          }
+	          return true;
+	        };
+	      }
+	    };
 	    return ma = _.assignIn(attr, {
-	      config: tie._config(tie),
+	      config: config,
 	      disabled: tie.disabled,
 	      onsubmit: function(e) {
 	        tie.do_submit();
@@ -53903,8 +53921,6 @@
 	        return input.config(elem, isStay, context);
 	      };
 	    };
-	
-	    InputTie.prototype.config = function(elem, isStay, context) {};
 	
 	    InputTie.prototype.do_change = function(input, value) {
 	      var id, old;
@@ -54064,7 +54080,7 @@
 	
 	    InputTie.prototype.draw = function() {
 	      var i, input, len, ref, results;
-	      ref = this._input;
+	      ref = this._inputs;
 	      results = [];
 	      for (i = 0, len = ref.length; i < len; i++) {
 	        input = ref[i];
@@ -54074,7 +54090,7 @@
 	    };
 	
 	    InputTie.prototype.bind = function(input) {
-	      return this._input.push(input);
+	      return this._inputs.push(input);
 	    };
 	
 	    InputTie.prototype.bundle = function(format) {
@@ -54106,15 +54122,6 @@
 	          };
 	        })(this);
 	      } else {
-	        this.dom = {
-	          checkValidity: (function(_this) {
-	            return function() {
-	              return _.every(_this._input, function(input) {
-	                return input.dom.checkValidity();
-	              });
-	            };
-	          })(this)
-	        };
 	        this._submit_attr = (function(_this) {
 	          return function(__, attr) {
 	            var submit;
@@ -54139,7 +54146,7 @@
 	      var i, id, ids, len;
 	      this.params = arg.params, ids = arg.ids;
 	      this.off();
-	      this._input = [];
+	      this._inputs = [];
 	      this.input = {};
 	      this.tie = new Tie;
 	      this.prop = this.tie.prop;

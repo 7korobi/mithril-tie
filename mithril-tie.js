@@ -1,6 +1,6 @@
 /**
  mithril-tie - browser input helper for mithril
- @version v0.0.7
+ @version v0.0.8
  @link https://github.com/7korobi/mithril-tie
  @license 
 **/
@@ -150,9 +150,8 @@
     return _.assignIn.apply(_, attrs);
   };
 
-  _attr_form = function(tie, arg) {
-    var attr, config, ma;
-    attr = arg.attr;
+  _attr_form = function(tie, attr) {
+    var config, ma;
     config = function(elem, isStay, context) {
       tie.dom = elem;
       if (!isStay) {
@@ -481,7 +480,13 @@
       return new InputTie({
         ids: ids,
         params: params
-      })._submit({});
+      })._submit({
+        form: function() {
+          var attr, vdom;
+          attr = arguments[0], vdom = 2 <= arguments.length ? slice.call(arguments, 1) : [];
+          throw "unimplemented. change InputTie.btns to InputTie.form";
+        }
+      });
     };
 
     InputTie.format = function(o) {

@@ -6,7 +6,7 @@ _ = require "lodash"
 submit_pick = (attrs...)->
   _.assignIn attrs...
 
-_attr_form = (tie, { attr })->
+_attr_form = (tie, attr)->
   config = (elem, isStay, context)->
     tie.dom = elem
     unless isStay

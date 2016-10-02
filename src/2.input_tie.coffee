@@ -206,7 +206,9 @@ class InputTie
 
   @btns: (params, ids)->
     new InputTie { ids, params }
-    ._submit {}
+    ._submit
+      form: (attr, vdom...)->
+        throw "unimplemented. change InputTie.btns to InputTie.form"
 
   @format: (o)->
     o.label ?= {}

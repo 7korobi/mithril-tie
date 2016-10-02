@@ -86,7 +86,7 @@ class basic_input
     @__uri = Mem.pack[@type]
     @__val = Mem.unpack[@type]
 
-    @tie.do_draw @do_draw.bind @
+    @tie.bind @
     @option_default = _.assign {}, @option_default, option_default
 
   config: (@dom, isStay, context)->

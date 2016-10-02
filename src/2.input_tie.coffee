@@ -7,7 +7,15 @@ submit_pick = (attrs...)->
   _.assignIn attrs...
 
 _attr_form = (tie, { attr })->
+  config = (elem, isStay, context)->
+    tie.dom = elem
+    unless isStay
+      elem.checkValidity ?= ->
+        for input in tie._inputs when input.dom
+          return false unless input.dom.checkValidity()
+        return true
   ma = _.assignIn attr,
+    config: config
     disabled: tie.disabled
     onsubmit: (e)->
       tie.do_submit()
@@ -27,24 +35,20 @@ class InputTie
       , @timeout
 
   _config: (input)->
-    (elem, isStay, context)=>
-      @config input, elem, isStay, context
-
-  config: (input, elem, isStay, context)->
-    unless isStay
-      elem.validity ?=
-        valid: true
-      elem.checkValidity ?= ->
-        @validity.valid
-      elem.setCustomValidity ?= (@validationMessage)->
-        if @validationMessage
-          @validity.customError = true
-          @validity.valid = false
-        else
-          @validity.customError = false
-          @validity.valid = true
-
-    input.config elem, isStay, context
+    (elem, isStay, context)->
+      unless isStay
+        elem.validity ?=
+          valid: true
+        elem.checkValidity ?= ->
+          @validity.valid
+        elem.setCustomValidity ?= (@validationMessage)->
+          if @validationMessage
+            @validity.customError = true
+            @validity.valid = false
+          else
+            @validity.customError = false
+            @validity.valid = true
+      input.config elem, isStay, context
 
   do_change: (input, value)->
     value = input.__val value
@@ -144,11 +148,11 @@ class InputTie
     m tag, ma, children...
 
   draw: ->
-    for draw in @_draw
-      draw()
+    for input in @_inputs
+      input.do_draw()
 
-  do_draw: (cb)->
-    @_draw.push cb
+  bind: (input)->
+    @_inputs.push input
 
   bundle: (format)->
     { _id, attr } = format
@@ -163,15 +167,15 @@ class InputTie
 
   _submit: ({@form})->
     attr = {}
-    @_submit_attr =
-      if @form
-        (__, attr)->
+    if @form
+      @_submit_attr =
+        (__, attr)=>
           submit_pick attr,
             type: "submit"
             disabled: @disabled
-      else
-        (__, attr)->
-          @do_dom null, {}
+    else
+      @_submit_attr =
+        (__, attr)=>
           submit = (e)=>
             @do_submit()
             false
@@ -186,7 +190,7 @@ class InputTie
 
   constructor: ({ @params, ids })->
     @off()
-    @_draw = []
+    @_inputs = []
     @input = {}
     @tie = new Tie
     @prop = @tie.prop

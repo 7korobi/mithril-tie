@@ -53693,7 +53693,7 @@
 
 	/**
 	 mithril-tie - browser input helper for mithril
-	 @version v0.0.6
+	 @version v0.0.7
 	 @link https://github.com/7korobi/mithril-tie
 	 @license 
 	**/
@@ -53847,6 +53847,7 @@
 	    var attr, ma;
 	    attr = arg.attr;
 	    return ma = _.assignIn(attr, {
+	      config: tie._config(tie),
 	      disabled: tie.disabled,
 	      onsubmit: function(e) {
 	        tie.do_submit();
@@ -53874,40 +53875,36 @@
 	    };
 	
 	    InputTie.prototype._config = function(input) {
-	      return (function(_this) {
-	        return function(elem, isStay, context) {
-	          return _this.config(input, elem, isStay, context);
-	        };
-	      })(this);
+	      return function(elem, isStay, context) {
+	        if (!isStay) {
+	          if (elem.validity == null) {
+	            elem.validity = {
+	              valid: true
+	            };
+	          }
+	          if (elem.checkValidity == null) {
+	            elem.checkValidity = function() {
+	              return this.validity.valid;
+	            };
+	          }
+	          if (elem.setCustomValidity == null) {
+	            elem.setCustomValidity = function(validationMessage) {
+	              this.validationMessage = validationMessage;
+	              if (this.validationMessage) {
+	                this.validity.customError = true;
+	                return this.validity.valid = false;
+	              } else {
+	                this.validity.customError = false;
+	                return this.validity.valid = true;
+	              }
+	            };
+	          }
+	        }
+	        return input.config(elem, isStay, context);
+	      };
 	    };
 	
-	    InputTie.prototype.config = function(input, elem, isStay, context) {
-	      if (!isStay) {
-	        if (elem.validity == null) {
-	          elem.validity = {
-	            valid: true
-	          };
-	        }
-	        if (elem.checkValidity == null) {
-	          elem.checkValidity = function() {
-	            return this.validity.valid;
-	          };
-	        }
-	        if (elem.setCustomValidity == null) {
-	          elem.setCustomValidity = function(validationMessage) {
-	            this.validationMessage = validationMessage;
-	            if (this.validationMessage) {
-	              this.validity.customError = true;
-	              return this.validity.valid = false;
-	            } else {
-	              this.validity.customError = false;
-	              return this.validity.valid = true;
-	            }
-	          };
-	        }
-	      }
-	      return input.config(elem, isStay, context);
-	    };
+	    InputTie.prototype.config = function(elem, isStay, context) {};
 	
 	    InputTie.prototype.do_change = function(input, value) {
 	      var id, old;
@@ -54066,18 +54063,18 @@
 	    };
 	
 	    InputTie.prototype.draw = function() {
-	      var draw, i, len, ref, results;
-	      ref = this._draw;
+	      var i, input, len, ref, results;
+	      ref = this._input;
 	      results = [];
 	      for (i = 0, len = ref.length; i < len; i++) {
-	        draw = ref[i];
-	        results.push(draw());
+	        input = ref[i];
+	        results.push(input.do_draw());
 	      }
 	      return results;
 	    };
 	
-	    InputTie.prototype.do_draw = function(cb) {
-	      return this._draw.push(cb);
+	    InputTie.prototype.bind = function(input) {
+	      return this._input.push(input);
 	    };
 	
 	    InputTie.prototype.bundle = function(format) {
@@ -54099,28 +54096,42 @@
 	      var attr;
 	      this.form = arg.form;
 	      attr = {};
-	      this._submit_attr = this.form ? function(__, attr) {
-	        return submit_pick(attr, {
-	          type: "submit",
-	          disabled: this.disabled
-	        });
-	      } : function(__, attr) {
-	        var submit;
-	        this.do_dom(null, {});
-	        submit = (function(_this) {
-	          return function(e) {
-	            _this.do_submit();
-	            return false;
+	      if (this.form) {
+	        this._submit_attr = (function(_this) {
+	          return function(__, attr) {
+	            return submit_pick(attr, {
+	              type: "submit",
+	              disabled: _this.disabled
+	            });
 	          };
 	        })(this);
-	        return submit_pick(attr, {
-	          type: "button",
-	          disabled: this.disabled,
-	          onclick: submit,
-	          onmouseup: submit,
-	          ontouchend: submit
-	        });
-	      };
+	      } else {
+	        this.dom = {
+	          checkValidity: (function(_this) {
+	            return function() {
+	              return _.every(_this._input, function(input) {
+	                return input.dom.checkValidity();
+	              });
+	            };
+	          })(this)
+	        };
+	        this._submit_attr = (function(_this) {
+	          return function(__, attr) {
+	            var submit;
+	            submit = function(e) {
+	              _this.do_submit();
+	              return false;
+	            };
+	            return submit_pick(attr, {
+	              type: "button",
+	              disabled: _this.disabled,
+	              onclick: submit,
+	              onmouseup: submit,
+	              ontouchend: submit
+	            });
+	          };
+	        })(this);
+	      }
 	      return this;
 	    };
 	
@@ -54128,7 +54139,7 @@
 	      var i, id, ids, len;
 	      this.params = arg.params, ids = arg.ids;
 	      this.off();
-	      this._draw = [];
+	      this._input = [];
 	      this.input = {};
 	      this.tie = new Tie;
 	      this.prop = this.tie.prop;
@@ -54923,7 +54934,7 @@
 	      this.__info = info;
 	      this.__uri = Mem.pack[this.type];
 	      this.__val = Mem.unpack[this.type];
-	      this.tie.do_draw(this.do_draw.bind(this));
+	      this.tie.bind(this);
 	      this.option_default = _.assign({}, this.option_default, option_default);
 	    }
 	

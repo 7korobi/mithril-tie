@@ -55,16 +55,12 @@ bundles = [
 ]
 tie.draw()
 
-
 describe "InputTie", ()->
   it "input list", ->
     expect( Object.keys tie.input ).to.have.members ["icon", "t1", "t2", "canvas"]
 
   it "draw", ->
-    state = {}
-    tie.do_draw -> state.do_draw = true
     tie.draw()
-    expect( state.do_draw ).to.eq true
 
   its "bundle results",
     bundles
@@ -190,10 +186,18 @@ describe "InputTie.type.text", ->
 
   it "over size", ->
     input = tie.input.t2
+    f = tie.form {},
+      { attrs } = input.field()
+
     elem = {}
     state = {}
     context = {}
-    { attrs } = input.field()
+    f.attrs.config elem, false, context
+    f.attrs.config elem, true, context
+
+    elem = {}
+    state = {}
+    context = {}
     attrs.config elem, false, context
     attrs.onfocus {}
     attrs.oninput
@@ -202,27 +206,35 @@ describe "InputTie.type.text", ->
     attrs.config elem, true, context
     attrs.onblur {}
 
+    console.warn tie.dom
     expect( params.t2 ).to.eq "abcdefg"
     expect( state.stay ).to.eq undefined
     expect( state.change ).to.eq "abcdefg"
+    expect( tie.dom.checkValidity() ).to.eq false
     tie.errors (msg, name)->
       console.warn [name, msg]
 
 
 describe "InputTie.type.canvas", ->
   its "field",
-    tie.input.canvas.field()
-    attrs:
-      width:  800
-      height: 600
-      style: "width: 400px; height: 300px;"
+    tie.form {},
+      tie.input.canvas.field()
+    children: [
+      attrs:
+        width:  800
+        height: 600
+        style: "width: 400px; height: 300px;"
+    ]
 
   its "field custom",
-    tie.input.canvas.field(size: [100, 100])
-    attrs:
-      width:  100
-      height: 100
-      style: "width: 50px; height: 50px;"
+    tie.form {},
+      tie.input.canvas.field(size: [100, 100])
+    children: [
+      attrs:
+        width:  100
+        height: 100
+        style: "width: 50px; height: 50px;"
+    ]
 
   it "show and do", ->
     input = tie.input.canvas

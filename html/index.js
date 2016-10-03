@@ -53693,7 +53693,7 @@
 
 	/**
 	 mithril-tie - browser input helper for mithril
-	 @version v0.0.7
+	 @version v0.0.10
 	 @link https://github.com/7korobi/mithril-tie
 	 @license 
 	**/
@@ -53843,9 +53843,8 @@
 	    return _.assignIn.apply(_, attrs);
 	  };
 	
-	  _attr_form = function(tie, arg) {
-	    var attr, config, ma;
-	    attr = arg.attr;
+	  _attr_form = function(tie, attr) {
+	    var config, ma;
 	    config = function(elem, isStay, context) {
 	      tie.dom = elem;
 	      if (!isStay) {
@@ -53892,49 +53891,37 @@
 	      })(this));
 	    };
 	
-	    InputTie.prototype._config = function(input) {
-	      return function(elem, isStay, context) {
-	        if (!isStay) {
-	          if (elem.validity == null) {
-	            elem.validity = {
-	              valid: true
-	            };
-	          }
-	          if (elem.checkValidity == null) {
-	            elem.checkValidity = function() {
-	              return this.validity.valid;
-	            };
-	          }
-	          if (elem.setCustomValidity == null) {
-	            elem.setCustomValidity = function(validationMessage) {
-	              this.validationMessage = validationMessage;
-	              if (this.validationMessage) {
-	                this.validity.customError = true;
-	                return this.validity.valid = false;
-	              } else {
-	                this.validity.customError = false;
-	                return this.validity.valid = true;
-	              }
-	            };
-	          }
-	        }
-	        return input.config(elem, isStay, context);
-	      };
+	    InputTie.prototype._cancel = function() {
+	      this.disabled = false;
+	      this.disable(false);
+	      return this.timer = null;
 	    };
+	
+	    InputTie.prototype.action = function() {};
+	
+	    InputTie.prototype.disable = function(id, b) {};
+	
+	    InputTie.prototype.focus = function(id, b, old_id) {};
+	
+	    InputTie.prototype.stay = function(id, value) {};
+	
+	    InputTie.prototype.change = function(id, value, old_value) {};
+	
+	    InputTie.prototype.select = function(id, str, offsets) {};
 	
 	    InputTie.prototype.do_change = function(input, value) {
 	      var id, old;
 	      value = input.__val(value);
 	      input.do_change(value);
+	      this.disabled = !!this.timer;
 	      id = input._id;
 	      old = this.params[id];
 	      if (old === value) {
-	        this.stay(id, value);
+	        return this.stay(id, value);
 	      } else {
 	        this.params[id] = value;
-	        this.change(id, value, old);
+	        return this.change(id, value, old);
 	      }
-	      return this.disabled = !!this.timer;
 	    };
 	
 	    InputTie.prototype.do_fail = function(input, value) {
@@ -53987,7 +53974,8 @@
 	          return ok(value);
 	        });
 	      }
-	      this.on();
+	      this.disabled = true;
+	      this.disable(true);
 	      m.redraw();
 	      return Promise.race([p_timer, p_action]).then((function(_this) {
 	        return function() {
@@ -54000,46 +53988,23 @@
 	        };
 	      })(this)).then((function(_this) {
 	        return function() {
-	          _this.off();
+	          _this._cancel();
 	          return m.redraw();
 	        };
 	      })(this));
 	    };
 	
-	    InputTie.prototype.action = function() {};
-	
-	    InputTie.prototype.disable = function(id, b) {};
-	
-	    InputTie.prototype.focus = function(id, b, old_id) {};
-	
-	    InputTie.prototype.stay = function(id, value) {};
-	
-	    InputTie.prototype.change = function(id, value, old_value) {};
-	
-	    InputTie.prototype.select = function(id, str, offsets) {};
-	
-	    InputTie.prototype.off = function() {
-	      this.disabled = false;
-	      this.disable(false);
-	      return this.timer = null;
-	    };
-	
-	    InputTie.prototype.on = function() {
-	      this.disabled = true;
-	      return this.disable(true);
-	    };
-	
 	    InputTie.prototype.cancel = function() {
 	      clearTimeout(this.timer);
-	      return this.off();
+	      return this._cancel();
 	    };
 	
 	    InputTie.prototype.errors = function(cb) {
-	      var dom, id, name, ref, ref1, results;
-	      ref = this.input;
+	      var dom, i, len, name, ref, ref1, results;
+	      ref = this._inputs;
 	      results = [];
-	      for (id in ref) {
-	        ref1 = ref[id], name = ref1.name, dom = ref1.dom;
+	      for (i = 0, len = ref.length; i < len; i++) {
+	        ref1 = ref[i], name = ref1.name, dom = ref1.dom;
 	        if (dom != null ? dom.validationMessage : void 0) {
 	          results.push(cb(dom.validationMessage, name));
 	        }
@@ -54048,11 +54013,11 @@
 	    };
 	
 	    InputTie.prototype.infos = function(cb) {
-	      var id, info_msg, name, ref, ref1, results;
-	      ref = this.input;
+	      var i, info_msg, len, name, ref, ref1, results;
+	      ref = this._inputs;
 	      results = [];
-	      for (id in ref) {
-	        ref1 = ref[id], name = ref1.name, info_msg = ref1.info_msg;
+	      for (i = 0, len = ref.length; i < len; i++) {
+	        ref1 = ref[i], name = ref1.name, info_msg = ref1.info_msg;
 	        if (info_msg) {
 	          if (info_msg) {
 	            results.push(cb(info_msg, name));
@@ -54142,14 +54107,32 @@
 	      return this;
 	    };
 	
+	    InputTie.prototype.isDirty = function() {
+	      var i, input, len, ref;
+	      ref = this._inputs;
+	      for (i = 0, len = ref.length; i < len; i++) {
+	        input = ref[i];
+	        if (input.dom) {
+	          if (!input.isDirty()) {
+	            return false;
+	          }
+	        }
+	      }
+	      return true;
+	    };
+	
+	    InputTie.prototype.isValid = function() {
+	      var ref;
+	      return (ref = this.dom) != null ? ref.checkValidity() : void 0;
+	    };
+	
 	    function InputTie(arg) {
 	      var i, id, ids, len;
 	      this.params = arg.params, ids = arg.ids;
-	      this.off();
+	      this._cancel();
 	      this._inputs = [];
 	      this.input = {};
 	      this.tie = new Tie;
-	      this.prop = this.tie.prop;
 	      for (i = 0, len = ids.length; i < len; i++) {
 	        id = ids[i];
 	        this.bundle(Mem.Query.inputs.find(id));
@@ -54424,7 +54407,7 @@
 	}).call(this);
 	
 	(function() {
-	  var Tie, WebStore, cookie_prop, storage_prop;
+	  var Tie, WebStoreTie, cookie_prop, storage_prop;
 	
 	  Tie = module.exports.Tie;
 	
@@ -54467,17 +54450,17 @@
 	    };
 	  };
 	
-	  WebStore = (function() {
-	    function WebStore() {}
+	  WebStoreTie = (function() {
+	    function WebStoreTie() {}
 	
-	    WebStore.maps = function(ha) {
+	    WebStoreTie.maps = function(ha) {
 	      this.session = Tie.build_store(ha.session, storage_prop, sessionStorage);
 	      this.local = Tie.build_store(ha.local, storage_prop, localStorage);
 	      this.cookie = Tie.build_store(ha.cookie, cookie_prop, this.cookie_options);
 	      return this.params = Tie.params;
 	    };
 	
-	    WebStore.copyBy = function(source) {
+	    WebStoreTie.copyBy = function(source) {
 	      var i, len, ref, results, store;
 	      ref = Tie.types.store;
 	      results = [];
@@ -54488,7 +54471,7 @@
 	      return results;
 	    };
 	
-	    WebStore.copyTo = function(target) {
+	    WebStoreTie.copyTo = function(target) {
 	      var i, len, ref, results, store;
 	      ref = Tie.types.store;
 	      results = [];
@@ -54499,7 +54482,7 @@
 	      return results;
 	    };
 	
-	    WebStore.format = function(o) {
+	    WebStoreTie.format = function(o) {
 	      if (o.type == null) {
 	        o.type = "String";
 	      }
@@ -54518,11 +54501,11 @@
 	      })();
 	    };
 	
-	    return WebStore;
+	    return WebStoreTie;
 	
 	  })();
 	
-	  module.exports.WebStore = WebStore;
+	  module.exports.WebStore = WebStoreTie;
 	
 	}).call(this);
 	
@@ -54835,7 +54818,7 @@
 	    attrs = 1 <= arguments.length ? slice.call(arguments, 0) : [];
 	    ref = b = this, _value = ref._value, tie = ref.tie;
 	    return ma = input_pick(attrs, {
-	      config: this._config,
+	      config: this.config,
 	      disabled: tie.disabled,
 	      onblur: function(e) {
 	        return tie.do_blur(b, e);
@@ -54860,7 +54843,7 @@
 	    attrs = 1 <= arguments.length ? slice.call(arguments, 0) : [];
 	    ref = b = this, _value = ref._value, tie = ref.tie;
 	    return ma = input_pick(attrs, {
-	      config: this._config,
+	      config: this.config,
 	      disabled: tie.disabled,
 	      onblur: function(e) {
 	        return tie.do_blur(b, e);
@@ -54923,6 +54906,33 @@
 	
 	    basic_input.prototype._debounce = InputTie.prototype._debounce;
 	
+	    basic_input.prototype._config = function(dom, isStay, context) {
+	      var base, base1, base2;
+	      this.dom = dom;
+	      if (!isStay) {
+	        if ((base = this.dom).validity == null) {
+	          base.validity = {
+	            valid: true
+	          };
+	        }
+	        if ((base1 = this.dom).checkValidity == null) {
+	          base1.checkValidity = function() {
+	            return this.validity.valid;
+	          };
+	        }
+	        return (base2 = this.dom).setCustomValidity != null ? base2.setCustomValidity : base2.setCustomValidity = function(validationMessage) {
+	          this.validationMessage = validationMessage;
+	          if (this.validationMessage) {
+	            this.validity.customError = true;
+	            return this.validity.valid = false;
+	          } else {
+	            this.validity.customError = false;
+	            return this.validity.valid = true;
+	          }
+	        };
+	      }
+	    };
+	
 	    basic_input.prototype.timeout = 100;
 	
 	    basic_input.prototype.type = "String";
@@ -54937,17 +54947,13 @@
 	      this.tie = tie1;
 	      this.format = format;
 	      ref = this.format, this._id = ref._id, this.options = ref.options, this.attr = ref.attr, this.name = ref.name, this.current = ref.current, info = ref.info, option_default = ref.option_default;
-	      this._config = this.tie._config(this);
 	      this.__info = info;
 	      this.__uri = Mem.pack[this.type];
 	      this.__val = Mem.unpack[this.type];
+	      this.config = this._config.bind(this);
 	      this.tie.bind(this);
 	      this.option_default = _.assign({}, this.option_default, option_default);
 	    }
-	
-	    basic_input.prototype.config = function(dom, isStay, context) {
-	      this.dom = dom;
-	    };
 	
 	    basic_input.prototype.info = function(info_msg) {
 	      this.info_msg = info_msg != null ? info_msg : "";
@@ -54959,6 +54965,15 @@
 	        msg = "";
 	      }
 	      return (ref = this.dom) != null ? ref.setCustomValidity(msg) : void 0;
+	    };
+	
+	    basic_input.prototype.isDirty = function() {
+	      return this._dirty;
+	    };
+	
+	    basic_input.prototype.isValid = function() {
+	      var ref;
+	      return (ref = this.dom) != null ? ref.checkValidity() : void 0;
 	    };
 	
 	    basic_input.prototype.do_fail = function(value) {};
@@ -55384,7 +55399,7 @@
 	        css += " " + className;
 	      }
 	      return ma = _pick(attrs, {
-	        config: this._config,
+	        config: this.config,
 	        className: css,
 	        onclick: onchange,
 	        onmouseup: onchange,
@@ -55793,20 +55808,20 @@
 	
 	    canvas.prototype._views = InputTie.util.canvas.Views;
 	
-	    function canvas() {
-	      this.views = new this._views(this);
-	      canvas.__super__.constructor.apply(this, arguments);
-	    }
-	
-	    canvas.prototype.config = function(dom1, isStay, ctx1) {
-	      this.dom = dom1;
+	    canvas.prototype._config = function(dom, isStay, ctx1) {
 	      this.ctx = ctx1;
+	      canvas.__super__._config.apply(this, arguments);
 	      if (!isStay) {
 	        this.views.dom(this.dom);
 	        this.do_blur();
 	      }
 	      return this.views.background(this.size);
 	    };
+	
+	    function canvas() {
+	      this.views = new this._views(this);
+	      canvas.__super__.constructor.apply(this, arguments);
+	    }
 	
 	    canvas.prototype.do_draw = function() {};
 	
@@ -55864,7 +55879,7 @@
 	        return tie.do_blur(b, e);
 	      };
 	      return ma = _pick(attrs, {
-	        config: this._config,
+	        config: this.config,
 	        ontouchend: blur,
 	        ontouchmove: move,
 	        ontouchstart: focus,
@@ -56175,15 +56190,9 @@
 	
 	    fabric.prototype._view = Fabric;
 	
-	    function fabric() {
-	      fabric.__super__.constructor.apply(this, arguments);
-	      this.size_old = [0, 0];
-	      this.view = new this._view(this.tie, this);
-	      this.view.__val = this.__val;
-	    }
-	
-	    fabric.prototype.config = function(dom, isStay, ctx) {
+	    fabric.prototype._config = function(dom, isStay, ctx) {
 	      var height, ref1, width;
+	      fabric.__super__._config.apply(this, arguments);
 	      ref1 = this.size, width = ref1[0], height = ref1[1];
 	      if (!isStay) {
 	        this.canvas = new_canvas(dom);
@@ -56200,6 +56209,13 @@
 	      }
 	      return this.size_old = this.size;
 	    };
+	
+	    function fabric() {
+	      fabric.__super__.constructor.apply(this, arguments);
+	      this.size_old = [0, 0];
+	      this.view = new this._view(this.tie, this);
+	      this.view.__val = this.__val;
+	    }
 	
 	    fabric.prototype.do_draw = function() {};
 	
@@ -56220,7 +56236,7 @@
 	      attrs = 1 <= arguments.length ? slice.call(arguments, 0) : [];
 	      ref1 = b = this, _value = ref1._value, tie = ref1.tie, ctx = ref1.ctx;
 	      return ma = _pick(attrs, {
-	        config: this._config
+	        config: this.config
 	      });
 	    };
 	

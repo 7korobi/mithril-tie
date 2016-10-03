@@ -34,25 +34,25 @@ class InputTie
         ng "reset #{ @timeout }ms "
       , @timeout
 
-  _config: (input)->
-    (elem, isStay, context)->
-      unless isStay
-        elem.validity ?=
-          valid: true
-        elem.checkValidity ?= ->
-          @validity.valid
-        elem.setCustomValidity ?= (@validationMessage)->
-          if @validationMessage
-            @validity.customError = true
-            @validity.valid = false
-          else
-            @validity.customError = false
-            @validity.valid = true
-      input.config elem, isStay, context
+  _cancel: ->
+    @disabled = false
+    @disable false
+    @timer = null
+
+
+  action: ->
+  disable: (id, b)->
+  focus:   (id, b, old_id)->
+  stay:    (id, value)->
+  change:  (id, value, old_value)->
+  select:  (id, str, offsets)->
+
 
   do_change: (input, value)->
     value = input.__val value
     input.do_change value
+    @disabled = !! @timer
+
     id = input._id
     old = @params[id]
     if old == value
@@ -61,7 +61,6 @@ class InputTie
       @params[id] = value
       @change id, value, old
 
-    @disabled = !! @timer
 
   do_fail: (input, value)->
     value = input.__val value
@@ -99,7 +98,9 @@ class InputTie
     unless @action.then?
       p_action = new Promise (ok)-> ok value
 
-    @on()
+    @disabled = true
+    @disable true
+
     m.redraw()
     Promise.race [p_timer, p_action]
     .then ()=>
@@ -107,35 +108,19 @@ class InputTie
     .catch (@message)=>
       console.log @message
     .then ()=>
-      @off()
+      @_cancel()
       m.redraw()
-
-  action: ->
-  disable: (id, b)->
-  focus:   (id, b, old_id)->
-  stay:    (id, value)->
-  change:  (id, value, old_value)->
-  select:  (id, str, offsets)->
-
-  off: ->
-    @disabled = false
-    @disable false
-    @timer = null
-
-  on: ->
-    @disabled = true
-    @disable true
 
   cancel: ->
     clearTimeout @timer
-    @off()
+    @_cancel()
 
   errors: (cb)->
-    for id, { name, dom } of @input when dom?.validationMessage
+    for { name, dom } in @_inputs when dom?.validationMessage
       cb dom.validationMessage, name
 
   infos: (cb)->
-    for id, { name, info_msg } of @input when info_msg
+    for { name, info_msg } in @_inputs when info_msg
       if info_msg
         cb info_msg, name
 
@@ -160,10 +145,6 @@ class InputTie
     type = InputTie.type[attr.type]
     type = type.multiple if attr.multiple
     @input[_id] = input = new type @, format
-    Tie.build_input @tie, _id, @params, input
-    input.do_draw()
-    @do_change input, @params[_id]
-    input
 
   _submit: ({@form})->
     attr = {}
@@ -188,12 +169,20 @@ class InputTie
             ontouchend: submit
     @
 
+  isDirty: ->
+    for input in @_inputs when input.dom
+      return false unless input.isDirty()
+    return true
+
+
+  isValid: ->
+    @dom?.checkValidity()
+
   constructor: ({ @params, ids })->
-    @off()
+    @_cancel()
     @_inputs = []
     @input = {}
     @tie = new Tie
-    @prop = @tie.prop
     for id in ids
       @bundle Mem.Query.inputs.find id
     return
@@ -206,9 +195,7 @@ class InputTie
 
   @btns: (params, ids)->
     new InputTie { ids, params }
-    ._submit
-      form: (attr, vdom...)->
-        throw "unimplemented. change InputTie.btns to InputTie.form"
+    ._submit {}
 
   @format: (o)->
     o.label ?= {}

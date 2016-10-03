@@ -29,7 +29,7 @@ cookie_prop = (options, key, unpack, pack)->
         unpack match[1]
 
 
-class WebStore
+class WebStoreTie
   @maps: (ha)->
     @session = Tie.build_store ha.session, storage_prop, sessionStorage
     @local   = Tie.build_store ha.local,   storage_prop,   localStorage
@@ -57,4 +57,4 @@ class WebStore
         when "Text"
           ""
 
-module.exports.WebStore = WebStore
+module.exports.WebStore = WebStoreTie

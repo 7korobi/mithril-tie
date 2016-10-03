@@ -1,7 +1,7 @@
 Mem = require "memory-record"
 m = require "mithril"
 _ = require "lodash"
-{ InputTie } = module.exports
+{ InputTie, Tie } = module.exports
 
 
 input_pick = ( attrs, last )->
@@ -22,7 +22,7 @@ _attr_label = (attrs...)->
 change_attr = (attrs...)->
   { _value, tie } = b = @
   ma = input_pick attrs,
-    config: @_config
+    config: @config
     disabled: tie.disabled
     onblur:     (e)-> tie.do_blur   b, e
     onfocus:    (e)-> tie.do_focus  b, e
@@ -33,7 +33,7 @@ change_attr = (attrs...)->
 input_attr = (attrs...)->
   { _value, tie } = b = @
   ma = input_pick attrs,
-    config: @_config
+    config: @config
     disabled: tie.disabled
     onblur:    (e)-> tie.do_blur   b, e
     onfocus:   (e)-> tie.do_focus  b, e
@@ -52,7 +52,7 @@ e_selected  = (e)->
   news
 
 
-validity_attr =
+validity_by =
   valid: "valid"
   valueMissing: "required"
   typeMismatch: "type"
@@ -72,6 +72,20 @@ class basic_input
   _value: e_value
   _attr:  input_attr
   _debounce: InputTie.prototype._debounce
+  _config: (@dom, isStay, context)->
+    unless isStay
+      @dom.validity ?=
+        valid: true
+      @dom.checkValidity ?= ->
+        @validity.valid
+      @dom.setCustomValidity ?= (@validationMessage)->
+        if @validationMessage
+          @validity.customError = true
+          @validity.valid = false
+        else
+          @validity.customError = false
+          @validity.valid = true
+
   timeout: 100
   type: "String"
 
@@ -81,19 +95,33 @@ class basic_input
 
   constructor: (@tie, @format)->
     { @_id, @options, @attr, @name, @current, info, option_default } = @format
-    @_config = @tie._config @
     @__info = info
     @__uri = Mem.pack[@type]
     @__val = Mem.unpack[@type]
-
+    @config = @_config.bind @
     @tie.bind @
     @option_default = _.assign {}, @option_default, option_default
 
-  config: (@dom, isStay, context)->
+    Tie.build_input @tie.tie, @_id, @tie.params, @
+    @default = @value()
+    @do_draw()
+    @tie.do_change @, @default
+    return
 
   info: (@info_msg = "")->
   error: (msg = "")->
     @dom?.setCustomValidity msg
+
+  value: (new_val)->
+    if arguments.length
+      @tie.do_change @, @__val new_val
+    @tie.params[@_id]
+
+  isDirty: ->
+    @default == @value()
+
+  isValid: ->
+    @dom?.checkValidity()
 
   do_fail: (value)->
   do_focus: ->
@@ -101,13 +129,13 @@ class basic_input
   do_draw: ->
     { info, label } = @format
     @__name = @attr.name || @_id
-    @__value = @tie.params[@_id]
+    @__value = @value()
   do_change: (value)->
     if @dom && ! @dom.validity.customError
       # @dom.validity.checkValidity()
       if @format.error
         for key, val of @dom.validity when val
-          msg = @format.error[validity_attr[key]]
+          msg = @format.error[validity_by[key]]
           if msg
             @error msg
             return
@@ -156,13 +184,16 @@ class basic_input
     # data-tooltip, disabled
     m "input", ma
 
+
 class number_input extends basic_input
   type: "Number"
+
 
 for key in ["hidden", "tel", "password", "datetime", "date", "month", "week", "time", "datetime-local", "color"]
   InputTie.type[key] = basic_input
 for key in ["number", "range"]
   InputTie.type[key] = number_input
+
 
 class InputTie.type.checkbox extends basic_input
   _value: e_checked

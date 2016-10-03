@@ -39,14 +39,8 @@ class InputTie.type.fabric extends InputTie.type.hidden
 
   type: "Array"
   _view: Fabric
-
-  constructor: ->
+  _config: (dom, isStay, ctx)->
     super
-    @size_old = [0,0]
-    @view = new @_view @tie, @
-    @view.__val = @__val
-
-  config: (dom, isStay, ctx)->
     [ width, height ] = @size
     unless isStay
       @canvas = new_canvas dom
@@ -64,6 +58,12 @@ class InputTie.type.fabric extends InputTie.type.hidden
 
     @size_old = @size
 
+  constructor: ->
+    super
+    @size_old = [0,0]
+    @view = new @_view @tie, @
+    @view.__val = @__val
+
   do_draw: ->
   do_focus: (e)->
   do_blur:  (e)->
@@ -77,7 +77,7 @@ class InputTie.type.fabric extends InputTie.type.hidden
     { _value, tie, ctx } = b = @
 
     ma = _pick attrs,
-      config: @_config
+      config: @config
 
   field: (m_attr = {})->
     [ w, h ] = @size = m_attr.size || @attr.size

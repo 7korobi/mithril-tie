@@ -60,16 +60,16 @@ browser = ->
 class InputTie.type.canvas extends InputTie.type.hidden
   type: "Array"
   _views: InputTie.util.canvas.Views
-
-  constructor: ->
-    @views = new @_views @
+  _config: (dom, isStay, @ctx)->
     super
-
-  config: (@dom, isStay, @ctx)->
     unless isStay
       @views.dom @dom
       @do_blur()
     @views.background @size
+
+  constructor: ->
+    @views = new @_views @
+    super
 
   do_draw: ->
 
@@ -115,7 +115,7 @@ class InputTie.type.canvas extends InputTie.type.hidden
       tie.do_blur b, e
 
     ma = _pick attrs,
-      config: @_config
+      config: @config
       ontouchend: blur
       ontouchmove: move
       ontouchstart: focus

@@ -1,59 +1,67 @@
 { InputTie } = require "../mithril-tie.js"
 Mem = require "memory-record"
 
-icon =
-  _id: "icon"
-  attr:
-    type: "icon"
-  name: "アイコン"
-  current: null
-  options:
-    cog:   "画面表示を調整します。"
-    home:  "村の設定、アナウンスを表示します。"
-  option_default:
-    label: "icon default"
-
-t1 =
-  _id: "t1"
-  attr:
-    type: "textarea"
-    max_line:   2
-  name: "テキスト1"
-  current: "ab\ncd\nef"
-
-t2 =
-  _id: "t2"
-  attr:
-    type: "text"
-    maxlength: 6
-  name: "テキスト2"
-  current: "abcdef"
-  option_default:
-    label: "t2 default"
-
-canvas =
-  _id: "canvas"
-  attr:
-    type: "canvas"
-    size: [ 800, 600 ]
-  name: "裸のキャンバス"
-  current: null
-
-
 state = {}
-params = {}
-tie = new InputTie.form params, []
-tie.stay = (id, value)->
-  state.stay = value
-tie.change = (id, value, old)->
-  state.change = value
-bundles = [
-  tie.bundle icon
-  tie.bundle t1
-  tie.bundle t2
-  tie.bundle canvas
-]
-tie.draw()
+
+component =
+  controller: ->
+    @params = {}
+    @tie = new InputTie.form @params, []
+    @tie.stay = (id, value)->
+      state.stay = value
+    @tie.change = (id, value, old)->
+      state.change = value
+    @tie.action = ->
+      state.action = true
+
+    @bundles = [
+      @tie.bundle
+        _id: "icon"
+        attr:
+          type: "icon"
+        name: "アイコン"
+        current: null
+        options:
+          cog:   "画面表示を調整します。"
+          home:  "村の設定、アナウンスを表示します。"
+        option_default:
+          label: "icon default"
+
+      @tie.bundle
+        _id: "t1"
+        attr:
+          type: "textarea"
+          max_line:   2
+        name: "テキスト1"
+        current: "ab\ncd\nef"
+
+      @tie.bundle
+        _id: "t2"
+        attr:
+          type: "text"
+          maxlength: 6
+        name: "テキスト2"
+        current: "abcdef"
+        option_default:
+          label: "t2 default"
+
+      @tie.bundle
+        _id: "canvas"
+        attr:
+          type: "canvas"
+          size: [ 800, 600 ]
+        name: "裸のキャンバス"
+        current: null
+
+    ]
+    @tie.draw()
+    return
+
+  view: ({tie})->
+
+
+{ tie, bundles, params } = c = new component.controller()
+component.view c
 
 describe "InputTie", ()->
   it "input list", ->
@@ -130,11 +138,11 @@ describe "InputTie.type.textarea", ()->
     ]
 
   it "over max_line", ->
-    input = tie.input.t1
+    tie.draw()
     elem = {}
     state = {}
     context = {}
-    { attrs } = input.field()
+    { attrs } = tie.input.t1.field()
     attrs.config elem, false, context
     attrs.onfocus {}
     attrs.oninput
@@ -151,11 +159,11 @@ describe "InputTie.type.textarea", ()->
       console.warn msg
 
   it "in max_line", ->
-    input = tie.input.t1
+    tie.draw()
     elem = {}
     state = {}
     context = {}
-    { attrs } = input.field()
+    { attrs } = tie.input.t1.field()
     attrs.config elem, false, context
     attrs.onfocus {}
     attrs.oninput
@@ -185,9 +193,9 @@ describe "InputTie.type.text", ->
     ]
 
   it "over size", ->
-    input = tie.input.t2
+    tie.draw()
     f = tie.form {},
-      { attrs } = input.field()
+      { attrs } = tie.input.t2.field()
 
     elem = {}
     state = {}
@@ -209,7 +217,7 @@ describe "InputTie.type.text", ->
     expect( params.t2 ).to.eq "abcdefg"
     expect( state.stay ).to.eq undefined
     expect( state.change ).to.eq "abcdefg"
-    expect( tie.dom.checkValidity() ).to.eq false
+    expect( tie.isValid() ).to.eq false
     tie.errors (msg, name)->
       console.warn [name, msg]
 
@@ -256,6 +264,7 @@ describe "InputTie.type.canvas", ->
           expect(args).to.deep.eq [0,0,800,600]
           image = args
 
+    tie.draw()
     { attrs } = input.field()
     attrs.config elem, false, context
     attrs.ontouchstart
@@ -280,3 +289,43 @@ describe "InputTie.type.canvas", ->
     expect( state.change ).to.deep.eq [10,20]
     tie.errors (msg, name)->
       console.warn [name, msg]
+
+describe "InputTie.type.submit", ->
+  its "button",
+    tie.submit "btn text"
+    attrs:
+      className: "btn edge"
+    children: [
+      "btn text"
+    ]
+
+  it "do submit", ->
+    elem = {}
+    state = {}
+    context = {}
+    tie.draw()
+    { attrs } = tie.form {},
+      t1 = tie.input.t1.field()
+      tie.input.t1.foot()
+      t2 = tie.input.t2.field()
+      tie.input.t2.foot()
+
+    attrs.config elem, false, context
+    t1.attrs.config {}, false, context
+    t2.attrs.config {}, false, context
+    attrs.config elem, true, context
+    t1.attrs.oninput
+      currentTarget:
+        value: "abcde"
+    t2.attrs.oninput
+      currentTarget:
+        value: "abcdef"
+
+    console.warn params
+    expect( tie.isValid() ).to.eq true
+
+    tie.do_submit()
+    expect( state.action ).to.eq true
+
+
+

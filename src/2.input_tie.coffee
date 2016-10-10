@@ -115,15 +115,6 @@ class InputTie
     clearTimeout @timer
     @_cancel()
 
-  errors: (cb)->
-    for { name, dom } in @_inputs when dom?.validationMessage
-      cb dom.validationMessage, name
-
-  infos: (cb)->
-    for { name, info_msg } in @_inputs when info_msg
-      if info_msg
-        cb info_msg, name
-
   submit: (children...)->
     tag =  "button.btn"
     tag += ".edge" unless @disabled
@@ -133,8 +124,23 @@ class InputTie
     m tag, ma, children...
 
   draw: ->
-    for input in @_inputs
-      input.do_draw()
+    @_errors = null
+    for draw in @_draws
+      draw()
+
+  draws: (cb)->
+    @_draws.push cb
+
+  errors: ->
+    return @_errors if @_errors
+    @_errors = {}
+    for { _id, dom } in @_inputs when dom?.validationMessage
+       @_errors[_id] = dom.validationMessage
+    @_errors
+
+
+  infos: ->
+    @_infos
 
   bind: (input)->
     @_inputs.push input
@@ -180,7 +186,13 @@ class InputTie
 
   constructor: ({ @params, ids })->
     @_cancel()
+    @_draws = [
+      =>
+        for input in @_inputs
+          input.do_draw()
+    ]
     @_inputs = []
+    @_infos = {}
     @input = {}
     @tie = new Tie
     for id in ids

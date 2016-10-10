@@ -22,7 +22,7 @@ _attr_label = (attrs...)->
 change_attr = (attrs...)->
   { _value, tie } = b = @
   ma = input_pick attrs,
-    config: @config
+    config: @__config
     disabled: tie.disabled
     onblur:     (e)-> tie.do_blur   b, e
     onfocus:    (e)-> tie.do_focus  b, e
@@ -33,7 +33,7 @@ change_attr = (attrs...)->
 input_attr = (attrs...)->
   { _value, tie } = b = @
   ma = input_pick attrs,
-    config: @config
+    config: @__config
     disabled: tie.disabled
     onblur:    (e)-> tie.do_blur   b, e
     onfocus:   (e)-> tie.do_focus  b, e
@@ -98,7 +98,7 @@ class basic_input
     @__info = info
     @__uri = Mem.pack[@type]
     @__val = Mem.unpack[@type]
-    @config = @_config.bind @
+    @__config = @_config.bind @
     @tie.bind @
     @option_default = _.assign {}, @option_default, option_default
 
@@ -108,7 +108,8 @@ class basic_input
     @tie.do_change @, @default
     return
 
-  info: (@info_msg = "")->
+  info: (msg = "")->
+    @tie._infos[@_id] = msg
   error: (msg = "")->
     @dom?.setCustomValidity msg
 
@@ -130,6 +131,8 @@ class basic_input
     { info, label } = @format
     @__name = @attr.name || @_id
     @__value = @value()
+    @tie.errors[@_id] = @dom?.validationMessage || ""
+
   do_change: (value)->
     if @dom && ! @dom.validity.customError
       # @dom.validity.checkValidity()

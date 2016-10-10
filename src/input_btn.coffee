@@ -41,7 +41,7 @@ class btn_input extends InputTie.type.hidden
     css += " " + className if className
 
     ma = _pick attrs,
-      config: @config
+      config: @__config
       className: css
       onclick: onchange
       onmouseup: onchange

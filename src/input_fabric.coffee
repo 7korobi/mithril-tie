@@ -77,7 +77,7 @@ class InputTie.type.fabric extends InputTie.type.hidden
     { _value, tie, ctx } = b = @
 
     ma = _pick attrs,
-      config: @config
+      config: @__config
 
   field: (m_attr = {})->
     [ w, h ] = @size = m_attr.size || @attr.size

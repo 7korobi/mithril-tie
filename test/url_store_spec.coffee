@@ -48,35 +48,37 @@ WebStore.maps
 
 
 describe "Url", ->
-  its "match now",
-    Url
-    params:
-      a: "z"
-      b: "z"
-      c: "z"
-      d: "z"
-      e: "z"
-      g: "z"
-      h: "z"
+  it "match now", ->
+    exists "match now",
+      Url
+      params:
+        a: "z"
+        b: "z"
+        c: "z"
+        d: "z"
+        e: "z"
+        g: "z"
+        h: "z"
 
-  Url.popstate()
-  match = []
-  its "match change",
-    Url
-    conf:
-      a:   { match }
-      b:   { match }
-      cde: { match }
-      g:   { match }
-      h:   { match }
-    params:
-      a: "a"
-      b: "b"
-      c: "c"
-      d: "d"
-      e: "e"
-      g: "g"
-      h: "hijk"
+  it "match change", ->
+    Url.popstate()
+    match = []
+    exists "match change",
+      Url
+      conf:
+        a:   { match }
+        b:   { match }
+        cde: { match }
+        g:   { match }
+        h:   { match }
+      params:
+        a: "a"
+        b: "b"
+        c: "c"
+        d: "d"
+        e: "e"
+        g: "g"
+        h: "hijk"
 
   it "push state", ->
     Url.prop.g "zyx"

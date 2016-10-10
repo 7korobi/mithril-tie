@@ -6,13 +6,15 @@ state = {}
 component =
   controller: ->
     @params = {}
-    @tie = new InputTie.form @params, []
+    @tie = InputTie.form @params, []
     @tie.stay = (id, value)->
       state.stay = value
     @tie.change = (id, value, old)->
       state.change = value
     @tie.action = ->
       state.action = true
+    @tie.draws ->
+      
 
     @bundles = [
       @tie.bundle
@@ -54,10 +56,10 @@ component =
         current: null
 
     ]
-    @tie.draw()
     return
 
   view: ({tie})->
+    tie.draw()
 
 
 { tie, bundles, params } = c = new component.controller()
@@ -70,49 +72,53 @@ describe "InputTie", ()->
   it "draw", ->
     tie.draw()
 
-  its "bundle results",
-    bundles
-    [
-      _id: "icon"
-      name: "アイコン"
-      attr:
-        type: "icon"
-      option_default:
-        label: "icon default"
-    ,
-      _id: "t1"
-      name: "テキスト1"
-      attr:
-        type: "textarea"
-        max_line: 2
-      option_default:
-        label: ""
-    ,
-      _id: "t2"
-      name: "テキスト2"
-      attr:
-        type: "text"
-        maxlength: 6
-      option_default:
-        label: "t2 default"
-    ]
+  it "bundle results", ->
+    exists "bundles",
+      bundles
+      [
+        _id: "icon"
+        name: "アイコン"
+        attr:
+          type: "icon"
+        option_default:
+          label: "icon default"
+      ,
+        _id: "t1"
+        name: "テキスト1"
+        attr:
+          type: "textarea"
+          max_line: 2
+        option_default:
+          label: ""
+      ,
+        _id: "t2"
+        name: "テキスト2"
+        attr:
+          type: "text"
+          maxlength: 6
+        option_default:
+          label: "t2 default"
+      ]
 
 
 describe "InputTie.type.icon", ->
-  its "option cog",
-    tie.input.icon.option "cog"
-    _id: "cog"
-    label: "画面表示を調整します。"
+  it "option cog", ->
+    exists "icon-cog",
+      tie.input.icon.option "cog"
+      _id: "cog"
+      label: "画面表示を調整します。"
 
-  its "option home",
-    tie.input.icon.option "home"
-    _id: "home"
-    label: "村の設定、アナウンスを表示します。"
+  it "option home", ->
+    exists "icon-home",
+      tie.input.icon.option "home"
+      _id: "home"
+      label: "村の設定、アナウンスを表示します。"
 
-  its "option (null)",
-    tie.input.icon.option null
-    label: "icon default"
-    "data-tooltip": "選択しない"
+  it "option (null)", ->
+    exists "icon-(null)",
+      tie.input.icon.option null
+      label: "icon default"
+      "data-tooltip": "選択しない"
 
   it "option badge", ->
     tie.input.icon.options.cog.badge = -> 123
@@ -125,17 +131,18 @@ describe "InputTie.type.icon", ->
 
 
 describe "InputTie.type.textarea", ()->
-  its "foot",
-    tie.input.t1.foot()
-    [
-      { children: ["⊘"] }
-      " 8"
-      undefined
-      { children: ["字"] }
-      " 3"
-      { children: ["/2"] }
-      { children: ["行"] }
-    ]
+  it "foot", ->
+    exists "foot",
+      tie.input.t1.foot()
+      [
+        { children: ["⊘"] }
+        " 8"
+        undefined
+        { children: ["字"] }
+        " 3"
+        { children: ["/2"] }
+        { children: ["行"] }
+      ]
 
   it "over max_line", ->
     tie.draw()
@@ -151,12 +158,13 @@ describe "InputTie.type.textarea", ()->
     attrs.config elem, true, context
     attrs.onblur {}
 
+    tie.draw()
     expect( params.t1 ).to.eq "ab\ncd\nef"
     expect( state.stay ).to.eq "ab\ncd\nef"
     expect( state.change ).to.eq undefined
-
-    tie.errors (msg)->
-      console.warn msg
+    expect( tie.input.t1.isValid() ).to.eq false
+    console.warn tie.errors()
+    console.warn tie.infos()
 
   it "in max_line", ->
     tie.draw()
@@ -172,25 +180,28 @@ describe "InputTie.type.textarea", ()->
     attrs.config elem, true, context
     attrs.onblur {}
 
+    tie.draw()
     expect( params.t1 ).to.eq "abcdef"
     expect( state.stay ).to.eq undefined
     expect( state.change ).to.eq "abcdef"
-    tie.errors (msg, name)->
-      console.warn [name, msg]
+    expect( tie.input.t1.isValid() ).to.eq true
+    console.warn tie.errors()
+    console.warn tie.infos()
 
 
 describe "InputTie.type.text", ->
-  its "foot",
-    tie.input.t2.foot()
-    [
-      { children: ["⊘"] }
-      " 6"
-      { children: ["/6"] }
-      { children: ["字"] }
-      " 1"
-      undefined
-      { children: ["行"] }
-    ]
+  it "foot", ->
+    exists "foot",
+      tie.input.t2.foot()
+      [
+        { children: ["⊘"] }
+        " 6"
+        { children: ["/6"] }
+        { children: ["字"] }
+        " 1"
+        undefined
+        { children: ["行"] }
+      ]
 
   it "over size", ->
     tie.draw()
@@ -218,30 +229,32 @@ describe "InputTie.type.text", ->
     expect( state.stay ).to.eq undefined
     expect( state.change ).to.eq "abcdefg"
     expect( tie.isValid() ).to.eq false
-    tie.errors (msg, name)->
-      console.warn [name, msg]
+    console.warn tie.errors()
+    console.warn tie.infos()
 
 
 describe "InputTie.type.canvas", ->
-  its "field",
-    tie.form {},
-      tie.input.canvas.field()
-    children: [
-      attrs:
-        width:  800
-        height: 600
-        style: "width: 400px; height: 300px;"
-    ]
+  it "field", ->
+    exists "field",
+      tie.form {},
+        tie.input.canvas.field()
+      children: [
+        attrs:
+          width:  800
+          height: 600
+          style: "width: 400px; height: 300px;"
+      ]
 
-  its "field custom",
-    tie.form {},
-      tie.input.canvas.field(size: [100, 100])
-    children: [
-      attrs:
-        width:  100
-        height: 100
-        style: "width: 50px; height: 50px;"
-    ]
+  it "field custom", ->
+    exists "field custom",
+      tie.form {},
+        tie.input.canvas.field(size: [100, 100])
+      children: [
+        attrs:
+          width:  100
+          height: 100
+          style: "width: 50px; height: 50px;"
+      ]
 
   it "show and do", ->
     input = tie.input.canvas
@@ -287,17 +300,19 @@ describe "InputTie.type.canvas", ->
     expect( params.canvas ).to.deep.eq [10,20]
     expect( state.stay ).to.eq undefined
     expect( state.change ).to.deep.eq [10,20]
-    tie.errors (msg, name)->
-      console.warn [name, msg]
+    console.warn tie.errors()
+    console.warn tie.infos()
+
 
 describe "InputTie.type.submit", ->
-  its "button",
-    tie.submit "btn text"
-    attrs:
-      className: "btn edge"
-    children: [
-      "btn text"
-    ]
+  it "button", ->
+    exists "button",
+      tie.submit "btn text"
+      attrs:
+        className: "btn edge"
+      children: [
+        "btn text"
+      ]
 
   it "do submit", ->
     elem = {}

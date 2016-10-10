@@ -115,7 +115,7 @@ class InputTie.type.canvas extends InputTie.type.hidden
       tie.do_blur b, e
 
     ma = _pick attrs,
-      config: @config
+      config: @__config
       ontouchend: blur
       ontouchmove: move
       ontouchstart: focus

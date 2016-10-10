@@ -31,9 +31,8 @@ deep_scan_factory = (cb)->
       else
         cb base, a, b
 
-global.its = (word, val, obj)->
+global.exists = (word, val, obj)->
   deep_equal = deep_scan_factory (key, a, b)->
-    it key, ->
-      expect(a).to.eq b
+    assert a == b, "#{key} not #{JSON.stringify a} == #{JSON.stringify b} "
   deep_equal word, val, obj
 

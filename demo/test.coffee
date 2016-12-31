@@ -1,8 +1,6 @@
 OBJ = ->
   new Object null
 
-ratio = window.devicePixelRatio
-
 InputTie.type.fabric.extend "my_fabric", class view
   type: "String"
 

@@ -3,7 +3,14 @@ m = require "mithril"
 _ = require "lodash"
 { InputTie, Tie } = module.exports
 
-ratio = window.devicePixelRatio
+console.warn "deploy"
+RATIO = -> 1
+winX = winY = -> 0
+module.exports.deploy = ({window})->
+  RATIO = -> window.devicePixelRatio
+  winX  = -> window.scrollX
+  winY  = -> window.scrollY
+  return
 
 OBJ = ->
   new Object null
@@ -27,19 +34,19 @@ mouse = (event)->
   x = event.offsetX || event.layerX # PC || firefox
   y = event.offsetY || event.layerY # PC || firefox
   if x? && y?
-    x *= ratio
-    y *= ratio
+    x *= RATIO()
+    y *= RATIO()
     [x, y]
 
 
 touch_A = ({pageX, pageY}, {left, top})->
-  x = ratio * (pageX - left - window.scrollX)
-  y = ratio * (pageY - top  - window.scrollY)
+  x = RATIO() * (pageX - left - winX())
+  y = RATIO() * (pageY - top  - winY())
   [x, y]
 
 touch_B = ({pageX, pageY}, {left, top})->
-  x = ratio * (pageX - left)
-  y = ratio * (pageY - top  - window.scrollY)
+  x = RATIO() * (pageX - left)
+  y = RATIO() * (pageY - top  - winY())
   [x, y]
 
 touch = touch_B
@@ -132,7 +139,7 @@ class InputTie.type.canvas extends InputTie.type.hidden
       className: [@attr.className, m_attr.className].join(" ")
       width:  w
       height: h
-      style: "width: #{w / ratio}px; height: #{h / ratio}px;"
+      style: "width: #{w / RATIO()}px; height: #{h / RATIO()}px;"
     # data-tooltip, disabled
     m "canvas", ma
 

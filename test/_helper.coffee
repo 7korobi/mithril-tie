@@ -1,9 +1,4 @@
 
-global.window =
-  scrollX: 0
-  scrollY: 0
-  devicePixelRatio: 2
-  requestAnimationFrame: ->
 global.localStorage =
   getItem: ->
   setItem: ->
@@ -11,7 +6,9 @@ global.sessionStorage =
   getItem: ->
   setItem: ->
 global.document =
-  cookie = ""
+  cookie: ""
+global.window =
+  requestAnimationFrame: (cb)-> cb()
 
 global.assert = require "power-assert"
 

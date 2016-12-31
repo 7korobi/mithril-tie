@@ -54069,7 +54069,11 @@
 	
 	
 	(function() {
-	  module.exports = {};
+	  module.exports = {
+	    deploy: function(arg) {
+	      this.devicePixelRatio = arg.devicePixelRatio;
+	    }
+	  };
 	
 	}).call(this);
 	
@@ -56100,7 +56104,7 @@
 	}).call(this);
 	
 	(function() {
-	  var InputTie, Mem, OBJ, Tie, _, _pick, browser, capture, m, mouse, ratio, ref, touch, touch_A, touch_B,
+	  var InputTie, Mem, OBJ, Tie, _, _pick, browser, capture, m, mouse, ratio, ref, touch, touch_A, touch_B, window,
 	    slice = [].slice,
 	    extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
 	    hasProp = {}.hasOwnProperty;
@@ -56111,9 +56115,9 @@
 	
 	  _ = __webpack_require__(1);
 	
-	  ref = module.exports, InputTie = ref.InputTie, Tie = ref.Tie;
+	  ref = module.exports, InputTie = ref.InputTie, Tie = ref.Tie, window = ref.window;
 	
-	  ratio = window.devicePixelRatio;
+	  ratio = window.devicePixcelRatio;
 	
 	  OBJ = function() {
 	    return new Object(null);
@@ -56156,8 +56160,8 @@
 	    x = event.offsetX || event.layerX;
 	    y = event.offsetY || event.layerY;
 	    if ((x != null) && (y != null)) {
-	      x *= ratio;
-	      y *= ratio;
+	      x *= devicePixelRatio;
+	      y *= devicePixelRatio;
 	      return [x, y];
 	    }
 	  };
@@ -56166,8 +56170,8 @@
 	    var left, pageX, pageY, top, x, y;
 	    pageX = arg.pageX, pageY = arg.pageY;
 	    left = arg1.left, top = arg1.top;
-	    x = ratio * (pageX - left - window.scrollX);
-	    y = ratio * (pageY - top - window.scrollY);
+	    x = devicePixelRatio * (pageX - left - window.scrollX);
+	    y = devicePixelRatio * (pageY - top - window.scrollY);
 	    return [x, y];
 	  };
 	
@@ -56175,8 +56179,8 @@
 	    var left, pageX, pageY, top, x, y;
 	    pageX = arg.pageX, pageY = arg.pageY;
 	    left = arg1.left, top = arg1.top;
-	    x = ratio * (pageX - left);
-	    y = ratio * (pageY - top - window.scrollY);
+	    x = devicePixelRatio * (pageX - left);
+	    y = devicePixelRatio * (pageY - top - window.scrollY);
 	    return [x, y];
 	  };
 	
@@ -56293,7 +56297,7 @@
 	        className: [this.attr.className, m_attr.className].join(" "),
 	        width: w,
 	        height: h,
-	        style: "width: " + (w / ratio) + "px; height: " + (h / ratio) + "px;"
+	        style: "width: " + (w / devicePixelRatio) + "px; height: " + (h / devicePixelRatio) + "px;"
 	      });
 	      return m("canvas", ma);
 	    };
@@ -56305,203 +56309,7 @@
 	}).call(this);
 	
 	(function() {
-	  var InputTie, Mem, OBJ, Tie, Timeline, View, Views, _, m, mestype_orders, ref, ref1, timespan,
-	    extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-	    hasProp = {}.hasOwnProperty;
-	
-	  Mem = __webpack_require__(44);
-	
-	  m = __webpack_require__(43);
-	
-	  _ = __webpack_require__(1);
-	
-	  ref = module.exports, InputTie = ref.InputTie, Tie = ref.Tie;
-	
-	  OBJ = function() {
-	    return new Object(null);
-	  };
-	
-	  timespan = 1000 * 3600;
-	
-	  mestype_orders = ["SAY", "MSAY", "VSAY", "VGSAY", "GSAY", "SPSAY", "WSAY", "XSAY", "BSAY", "AIM", "TSAY", "MAKER", "ADMIN"];
-	
-	  ref1 = InputTie.util.canvas, View = ref1.View, Views = ref1.Views;
-	
-	  Timeline = (function(superClass) {
-	    extend(Timeline, superClass);
-	
-	    function Timeline() {
-	      return Timeline.__super__.constructor.apply(this, arguments);
-	    }
-	
-	    Timeline.prototype.dom = function(dom) {
-	      var ref2;
-	      this.dom = dom;
-	      Timeline.__super__.dom.apply(this, arguments);
-	      return ref2 = this.build(View, View), this.field = ref2[0], this.foots = ref2[1], ref2;
-	    };
-	
-	    Timeline.prototype.resize = function(size) {
-	      var height, heights, i, j, left, len, len1, mask, max_height, mestype, time_id, top, width;
-	      Timeline.__super__.resize.apply(this, arguments);
-	      this.base = Mem.Query.messages.talk(talk(), open(), potofs_hide());
-	      if (!base.reduce) {
-	        return;
-	      }
-	      this.masks = this.base.reduce.mask || {};
-	      heights = (function() {
-	        var ref2, results;
-	        ref2 = this.masks;
-	        results = [];
-	        for (time_id in ref2) {
-	          mask = ref2[time_id];
-	          results.push(mask.all.count);
-	        }
-	        return results;
-	      }).call(this);
-	      max_height = Math.max.apply(Math, heights);
-	      this.time_ids = _.sortBy(Object.keys(this.masks), Mem.unpack.Date);
-	      width = size[0], height = size[1];
-	      this.field.fit({
-	        size: [width, height - 50],
-	        view: [this.time_ids.length, max_height]
-	      });
-	      this.foots.fit({
-	        offset: [0, height - 50],
-	        size: [width, 50],
-	        view: [this.time_ids.length, 1]
-	      });
-	      this.field.pen({
-	        fillStyle: RAILS.log.colors.back,
-	        globalAlpha: 0.5
-	      });
-	      this.field.fill();
-	      for (left = i = 0, len = time_ids.length; i < len; left = ++i) {
-	        time_id = time_ids[left];
-	        mask = masks[time_id];
-	        top = max_height;
-	        for (j = 0, len1 = mestype_orders.length; j < len1; j++) {
-	          mestype = mestype_orders[j];
-	          if (!mask[mestype]) {
-	            continue;
-	          }
-	          height = mask[mestype].count;
-	          top -= height;
-	          this.field.pen({
-	            fillStyle: RAILS.log.colors[mestype],
-	            globalAlpha: 1
-	          });
-	          this.field.rect([left, top], [1, height]);
-	        }
-	      }
-	      return this.foots.path((function(_this) {
-	        return function() {
-	          var event, k, len2, ref2, results, right;
-	          ref2 = Mem.Query.events.list;
-	          results = [];
-	          for (k = 0, len2 = ref2.length; k < len2; k++) {
-	            event = ref2[k];
-	            if (!event.created_at) {
-	              continue;
-	            }
-	            right = index_at(event.updated_at);
-	            left = index_at(event.created_at);
-	            _this.foots.pen({
-	              strokeStyle: RAILS.log.colors.line,
-	              globalAlpha: 1
-	            });
-	            _this.foots.moveTo(left, 1);
-	            _this.foots.lineTo(left, 0);
-	            _this.foots.moveTo(right, 1);
-	            _this.foots.lineTo(right, 0);
-	            _this.foots.pen({
-	              fillStyle: RAILS.log.colors.event
-	            });
-	            _this.foots.fill();
-	            _this.foots.pen({
-	              font: "30px serif",
-	              textAlign: "left",
-	              fillStyle: RAILS.log.colors.text
-	            });
-	            results.push(_this.foots.text(event.name, [left, 38], right - left));
-	          }
-	          return results;
-	        };
-	      })(this));
-	    };
-	
-	    Timeline.prototype.draw = function(ctx) {
-	      var focus, x;
-	      this.ctx = ctx;
-	      focus = Mem.Query.messages.find(Url.params.talk_at);
-	      if (!focus) {
-	        return;
-	      }
-	      x = this.index(focus.updated_at);
-	      return this.field.path((function(_this) {
-	        return function() {
-	          _this.field.pen({
-	            strokeStyle: RAILS.log.colors.focus,
-	            globalAlpha: 1
-	          });
-	          _this.field.moveTo(x, _this.show_height);
-	          return _this.field.lineTo(x, 0);
-	        };
-	      })(this));
-	    };
-	
-	    Timeline.prototype.index = function(updated_at) {
-	      return this.time_ids.indexOf(Mem.pack.Date(updated_at / timespan));
-	    };
-	
-	    Timeline.prototype.choice = function(x, query) {
-	      var index, o;
-	      index = Math.floor(x);
-	      o = this.masks[this.time_ids[index]].all.min_is;
-	      Url.params.talk_at = o._id;
-	      Url.params.icon("search");
-	      Url.params.scope("talk");
-	      Url.params.scroll("");
-	      return win.scroll.rescroll(Url.prop.talk_at);
-	    };
-	
-	    Timeline.prototype.touch = function(at) {
-	      Url.params.search = "";
-	      this.field.touch(at, (function(_this) {
-	        return function(x) {
-	          return _this.choice(x, base);
-	        };
-	      })(this));
-	      return this.foots.touch(at, (function(_this) {
-	        return function(x) {
-	          return _this.choice(x, Mem.Query.messages.talk("open", false, {}));
-	        };
-	      })(this));
-	    };
-	
-	    return Timeline;
-	
-	  })(Views);
-	
-	  InputTie.type.timeline = (function(superClass) {
-	    extend(timeline, superClass);
-	
-	    function timeline() {
-	      return timeline.__super__.constructor.apply(this, arguments);
-	    }
-	
-	    timeline.prototype.type = "Array";
-	
-	    timeline.prototype._graph = Timeline;
-	
-	    return timeline;
-	
-	  })(InputTie.type.canvas);
-	
-	}).call(this);
-	
-	(function() {
-	  var Fabric, InputTie, Tie, _pick, chk_canvas, m, new_canvas, ratio, ref,
+	  var Fabric, InputTie, Tie, _pick, chk_canvas, m, new_canvas, ref,
 	    slice = [].slice,
 	    extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
 	    hasProp = {}.hasOwnProperty;
@@ -56509,8 +56317,6 @@
 	  m = __webpack_require__(43);
 	
 	  ref = module.exports, InputTie = ref.InputTie, Tie = ref.Tie;
-	
-	  ratio = window.devicePixelRatio;
 	
 	  _pick = function(attrs, last) {
 	    return _.assignIn.apply(_, [{}].concat(slice.call(attrs), [last]));
@@ -56781,6 +56587,202 @@
 	    key = ref[i];
 	    InputTie.type[key] = text_input;
 	  }
+	
+	}).call(this);
+	
+	(function() {
+	  var InputTie, Mem, OBJ, Tie, Timeline, View, Views, _, m, mestype_orders, ref, ref1, timespan,
+	    extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+	    hasProp = {}.hasOwnProperty;
+	
+	  Mem = __webpack_require__(44);
+	
+	  m = __webpack_require__(43);
+	
+	  _ = __webpack_require__(1);
+	
+	  ref = module.exports, InputTie = ref.InputTie, Tie = ref.Tie;
+	
+	  OBJ = function() {
+	    return new Object(null);
+	  };
+	
+	  timespan = 1000 * 3600;
+	
+	  mestype_orders = ["SAY", "MSAY", "VSAY", "VGSAY", "GSAY", "SPSAY", "WSAY", "XSAY", "BSAY", "AIM", "TSAY", "MAKER", "ADMIN"];
+	
+	  ref1 = InputTie.util.canvas, View = ref1.View, Views = ref1.Views;
+	
+	  Timeline = (function(superClass) {
+	    extend(Timeline, superClass);
+	
+	    function Timeline() {
+	      return Timeline.__super__.constructor.apply(this, arguments);
+	    }
+	
+	    Timeline.prototype.dom = function(dom) {
+	      var ref2;
+	      this.dom = dom;
+	      Timeline.__super__.dom.apply(this, arguments);
+	      return ref2 = this.build(View, View), this.field = ref2[0], this.foots = ref2[1], ref2;
+	    };
+	
+	    Timeline.prototype.resize = function(size) {
+	      var height, heights, i, j, left, len, len1, mask, max_height, mestype, time_id, top, width;
+	      Timeline.__super__.resize.apply(this, arguments);
+	      this.base = Mem.Query.messages.talk(talk(), open(), potofs_hide());
+	      if (!base.reduce) {
+	        return;
+	      }
+	      this.masks = this.base.reduce.mask || {};
+	      heights = (function() {
+	        var ref2, results;
+	        ref2 = this.masks;
+	        results = [];
+	        for (time_id in ref2) {
+	          mask = ref2[time_id];
+	          results.push(mask.all.count);
+	        }
+	        return results;
+	      }).call(this);
+	      max_height = Math.max.apply(Math, heights);
+	      this.time_ids = _.sortBy(Object.keys(this.masks), Mem.unpack.Date);
+	      width = size[0], height = size[1];
+	      this.field.fit({
+	        size: [width, height - 50],
+	        view: [this.time_ids.length, max_height]
+	      });
+	      this.foots.fit({
+	        offset: [0, height - 50],
+	        size: [width, 50],
+	        view: [this.time_ids.length, 1]
+	      });
+	      this.field.pen({
+	        fillStyle: RAILS.log.colors.back,
+	        globalAlpha: 0.5
+	      });
+	      this.field.fill();
+	      for (left = i = 0, len = time_ids.length; i < len; left = ++i) {
+	        time_id = time_ids[left];
+	        mask = masks[time_id];
+	        top = max_height;
+	        for (j = 0, len1 = mestype_orders.length; j < len1; j++) {
+	          mestype = mestype_orders[j];
+	          if (!mask[mestype]) {
+	            continue;
+	          }
+	          height = mask[mestype].count;
+	          top -= height;
+	          this.field.pen({
+	            fillStyle: RAILS.log.colors[mestype],
+	            globalAlpha: 1
+	          });
+	          this.field.rect([left, top], [1, height]);
+	        }
+	      }
+	      return this.foots.path((function(_this) {
+	        return function() {
+	          var event, k, len2, ref2, results, right;
+	          ref2 = Mem.Query.events.list;
+	          results = [];
+	          for (k = 0, len2 = ref2.length; k < len2; k++) {
+	            event = ref2[k];
+	            if (!event.created_at) {
+	              continue;
+	            }
+	            right = index_at(event.updated_at);
+	            left = index_at(event.created_at);
+	            _this.foots.pen({
+	              strokeStyle: RAILS.log.colors.line,
+	              globalAlpha: 1
+	            });
+	            _this.foots.moveTo(left, 1);
+	            _this.foots.lineTo(left, 0);
+	            _this.foots.moveTo(right, 1);
+	            _this.foots.lineTo(right, 0);
+	            _this.foots.pen({
+	              fillStyle: RAILS.log.colors.event
+	            });
+	            _this.foots.fill();
+	            _this.foots.pen({
+	              font: "30px serif",
+	              textAlign: "left",
+	              fillStyle: RAILS.log.colors.text
+	            });
+	            results.push(_this.foots.text(event.name, [left, 38], right - left));
+	          }
+	          return results;
+	        };
+	      })(this));
+	    };
+	
+	    Timeline.prototype.draw = function(ctx) {
+	      var focus, x;
+	      this.ctx = ctx;
+	      focus = Mem.Query.messages.find(Url.params.talk_at);
+	      if (!focus) {
+	        return;
+	      }
+	      x = this.index(focus.updated_at);
+	      return this.field.path((function(_this) {
+	        return function() {
+	          _this.field.pen({
+	            strokeStyle: RAILS.log.colors.focus,
+	            globalAlpha: 1
+	          });
+	          _this.field.moveTo(x, _this.show_height);
+	          return _this.field.lineTo(x, 0);
+	        };
+	      })(this));
+	    };
+	
+	    Timeline.prototype.index = function(updated_at) {
+	      return this.time_ids.indexOf(Mem.pack.Date(updated_at / timespan));
+	    };
+	
+	    Timeline.prototype.choice = function(x, query) {
+	      var index, o;
+	      index = Math.floor(x);
+	      o = this.masks[this.time_ids[index]].all.min_is;
+	      Url.params.talk_at = o._id;
+	      Url.params.icon("search");
+	      Url.params.scope("talk");
+	      Url.params.scroll("");
+	      return win.scroll.rescroll(Url.prop.talk_at);
+	    };
+	
+	    Timeline.prototype.touch = function(at) {
+	      Url.params.search = "";
+	      this.field.touch(at, (function(_this) {
+	        return function(x) {
+	          return _this.choice(x, base);
+	        };
+	      })(this));
+	      return this.foots.touch(at, (function(_this) {
+	        return function(x) {
+	          return _this.choice(x, Mem.Query.messages.talk("open", false, {}));
+	        };
+	      })(this));
+	    };
+	
+	    return Timeline;
+	
+	  })(Views);
+	
+	  InputTie.type.timeline = (function(superClass) {
+	    extend(timeline, superClass);
+	
+	    function timeline() {
+	      return timeline.__super__.constructor.apply(this, arguments);
+	    }
+	
+	    timeline.prototype.type = "Array";
+	
+	    timeline.prototype._graph = Timeline;
+	
+	    return timeline;
+	
+	  })(InputTie.type.canvas);
 	
 	}).call(this);
 

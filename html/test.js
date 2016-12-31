@@ -1,12 +1,10 @@
 (function() {
-  var Demo, OBJ, ratio, view,
+  var Demo, OBJ, view,
     slice = [].slice;
 
   OBJ = function() {
     return new Object(null);
   };
-
-  ratio = window.devicePixelRatio;
 
   InputTie.type.fabric.extend("my_fabric", view = (function() {
     view.prototype.type = "String";

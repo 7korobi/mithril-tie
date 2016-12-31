@@ -1,6 +1,10 @@
 Mem = require "memory-record"
-{ Url, WebStore } = require "../mithril-tie.js"
-
+{ Url, WebStore, deploy } = require "../mithril-tie.js"
+deploy
+  window:
+    scrollX: 0
+    scrollY: 0
+    devicePixelRatio: 2
 
 global.location =
   protocol: "a:"

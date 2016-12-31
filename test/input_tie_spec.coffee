@@ -1,5 +1,10 @@
-{ InputTie } = require "../mithril-tie.js"
 Mem = require "memory-record"
+{ InputTie, deploy } = require "../mithril-tie.js"
+deploy
+  window:
+    scrollX: 0
+    scrollY: 0
+    devicePixelRatio: 2
 
 state = {}
 

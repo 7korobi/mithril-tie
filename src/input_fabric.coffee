@@ -1,8 +1,6 @@
 m = require "mithril"
 { InputTie, Tie } = module.exports
 
-ratio = window.devicePixelRatio
-
 _pick = (attrs, last)->
   _.assignIn {}, attrs..., last
 

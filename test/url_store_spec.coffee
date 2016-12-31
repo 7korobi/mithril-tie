@@ -49,40 +49,34 @@ WebStore.maps
 
 describe "Url", ->
   it "match now", ->
-    exists "match now",
-      Url
-      params:
-        a: "z"
-        b: "z"
-        c: "z"
-        d: "z"
-        e: "z"
-        g: "z"
-        h: "z"
+    assert_only Url.params,
+      a: "z"
+      b: "z"
+      c: "z"
+      d: "z"
+      e: "z"
+      g: "z"
+      h: "z"
 
   it "match change", ->
     Url.popstate()
     match = []
-    exists "match change",
-      Url
-      conf:
-        a:   { match }
-        b:   { match }
-        cde: { match }
-        g:   { match }
-        h:   { match }
-      params:
-        a: "a"
-        b: "b"
-        c: "c"
-        d: "d"
-        e: "e"
-        g: "g"
-        h: "hijk"
+    assert_only Url.conf,
+      a:   { match }
+      b:   { match }
+      cde: { match }
+      g:   { match }
+      h:   { match }
+    assert_only Url.params,
+      a: "a"
+      b: "b"
+      c: "c"
+      d: "d"
+      e: "e"
+      g: "g"
+      h: "hijk"
 
   it "push state", ->
     Url.prop.g "zyx"
-    expect( Url.prop.g() ).to.eq "zyx"
-    expect( Url.location().href ).to.eq "a://b/c/d/e?f=zyx#hijk"
-
-
+    assert Url.prop.g() == "zyx"
+    assert Url.location().href == "a://b/c/d/e?f=zyx#hijk"

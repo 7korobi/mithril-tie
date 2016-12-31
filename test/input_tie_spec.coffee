@@ -14,7 +14,6 @@ component =
     @tie.action = ->
       state.action = true
     @tie.draws ->
-      
 
     @bundles = [
       @tie.bundle
@@ -67,14 +66,13 @@ component.view c
 
 describe "InputTie", ()->
   it "input list", ->
-    expect( Object.keys tie.input ).to.have.members ["icon", "t1", "t2", "canvas"]
+    assert.deepEqual Object.keys(tie.input), ["icon", "t1", "t2", "canvas"]
 
   it "draw", ->
     tie.draw()
 
   it "bundle results", ->
-    exists "bundles",
-      bundles
+    assert_only bundles,
       [
         _id: "icon"
         name: "アイコン"
@@ -88,8 +86,7 @@ describe "InputTie", ()->
         attr:
           type: "textarea"
           max_line: 2
-        option_default:
-          label: ""
+        option_default: {}
       ,
         _id: "t2"
         name: "テキスト2"
@@ -103,46 +100,41 @@ describe "InputTie", ()->
 
 describe "InputTie.type.icon", ->
   it "option cog", ->
-    exists "icon-cog",
-      tie.input.icon.option "cog"
+    assert_only tie.input.icon.option("cog"),
       _id: "cog"
       label: "画面表示を調整します。"
 
   it "option home", ->
-    exists "icon-home",
-      tie.input.icon.option "home"
+    assert_only tie.input.icon.option("home"),
       _id: "home"
       label: "村の設定、アナウンスを表示します。"
 
   it "option (null)", ->
-    exists "icon-(null)",
-      tie.input.icon.option null
+    assert_only tie.input.icon.option(null),
       label: "icon default"
       "data-tooltip": "選択しない"
 
   it "option badge", ->
     tie.input.icon.options.cog.badge = -> 123
-    expect( tie.input.icon.item("cog").children[1].children[0] ).to.eq 123
+    assert tie.input.icon.item("cog").children[1].children[0] == 123
 
   it "item", ->
-    expect( tie.input.icon.item("cog"                    ).tag ).to.eq "a"
-    expect( tie.input.icon.item("cog", { tag:"menuicon" }).tag ).to.eq "a"
-    expect( tie.input.icon.item("cog", { tag:"bigicon"  }).tag ).to.eq "section"
+    assert tie.input.icon.item("cog"                    ).tag == "a"
+    assert tie.input.icon.item("cog", { tag:"menuicon" }).tag == "a"
+    assert tie.input.icon.item("cog", { tag:"bigicon"  }).tag == "section"
 
 
 describe "InputTie.type.textarea", ()->
   it "foot", ->
-    exists "foot",
-      tie.input.t1.foot()
-      [
-        { children: ["⊘"] }
-        " 8"
-        undefined
-        { children: ["字"] }
-        " 3"
-        { children: ["/2"] }
-        { children: ["行"] }
-      ]
+    assert.deepEqual tie.input.t1.foot().map((o)-> o?.children ? o), [
+      ["⊘"]
+      " 8"
+      undefined
+      ["字"]
+      " 3"
+      ["/2"]
+      ["行"]
+    ]
 
   it "over max_line", ->
     tie.draw()
@@ -159,10 +151,10 @@ describe "InputTie.type.textarea", ()->
     attrs.onblur {}
 
     tie.draw()
-    expect( params.t1 ).to.eq "ab\ncd\nef"
-    expect( state.stay ).to.eq "ab\ncd\nef"
-    expect( state.change ).to.eq undefined
-    expect( tie.input.t1.isValid() ).to.eq false
+    assert params.t1 == "ab\ncd\nef"
+    assert state.stay == "ab\ncd\nef"
+    assert state.change == undefined
+    assert tie.input.t1.isValid() == false
     console.warn tie.errors()
     console.warn tie.infos()
 
@@ -181,27 +173,25 @@ describe "InputTie.type.textarea", ()->
     attrs.onblur {}
 
     tie.draw()
-    expect( params.t1 ).to.eq "abcdef"
-    expect( state.stay ).to.eq undefined
-    expect( state.change ).to.eq "abcdef"
-    expect( tie.input.t1.isValid() ).to.eq true
+    assert params.t1 == "abcdef"
+    assert state.stay == undefined
+    assert state.change == "abcdef"
+    assert tie.input.t1.isValid() == false
     console.warn tie.errors()
     console.warn tie.infos()
 
 
 describe "InputTie.type.text", ->
   it "foot", ->
-    exists "foot",
-      tie.input.t2.foot()
-      [
-        { children: ["⊘"] }
-        " 6"
-        { children: ["/6"] }
-        { children: ["字"] }
-        " 1"
-        undefined
-        { children: ["行"] }
-      ]
+    assert.deepEqual tie.input.t2.foot().map((o)-> o?.children ? o), [
+      ["⊘"]
+      " 6"
+      ["/6"]
+      ["字"]
+      " 1"
+      undefined
+      ["行"]
+    ]
 
   it "over size", ->
     tie.draw()
@@ -225,19 +215,17 @@ describe "InputTie.type.text", ->
     attrs.config elem, true, context
     attrs.onblur {}
 
-    expect( params.t2 ).to.eq "abcdefg"
-    expect( state.stay ).to.eq undefined
-    expect( state.change ).to.eq "abcdefg"
-    expect( tie.isValid() ).to.eq false
+    assert params.t2 == "abcdefg"
+    assert state.stay == undefined
+    assert state.change == "abcdefg"
+    assert tie.isValid() == false
     console.warn tie.errors()
     console.warn tie.infos()
 
 
 describe "InputTie.type.canvas", ->
   it "field", ->
-    exists "field",
-      tie.form {},
-        tie.input.canvas.field()
+    assert_only tie.form({}, tie.input.canvas.field()),
       children: [
         attrs:
           width:  800
@@ -246,9 +234,7 @@ describe "InputTie.type.canvas", ->
       ]
 
   it "field custom", ->
-    exists "field custom",
-      tie.form {},
-        tie.input.canvas.field(size: [100, 100])
+    assert_only tie.form({}, tie.input.canvas.field(size: [100, 100])),
       children: [
         attrs:
           width:  100
@@ -267,14 +253,14 @@ describe "InputTie.type.canvas", ->
         left: 0
         top:  0
       getContext: (args...)->
-        expect(args).to.deep.eq ["2d"]
+        assert.deepEqual args, ["2d"]
         image = null
         clearRect: (args...)->
-          expect(args).to.deep.eq [0,0,800,600]
+          assert.deepEqual args, [0,0,800,600]
         putImageData: (args...)->
-          expect(args).to.deep.eq [image,0,0]
+          assert.deepEqual args, [image,0,0]
         getImageData: (args...)->
-          expect(args).to.deep.eq [0,0,800,600]
+          assert.deepEqual args, [0,0,800,600]
           image = args
 
     tie.draw()
@@ -297,17 +283,16 @@ describe "InputTie.type.canvas", ->
         pageY: 10
       ]
 
-    expect( params.canvas ).to.deep.eq [10,20]
-    expect( state.stay ).to.eq undefined
-    expect( state.change ).to.deep.eq [10,20]
+    assert.deepEqual params.canvas, [10,20]
+    assert.deepEqual state.change, [10,20]
+    assert state.stay == undefined
     console.warn tie.errors()
     console.warn tie.infos()
 
 
 describe "InputTie.type.submit", ->
   it "button", ->
-    exists "button",
-      tie.submit "btn text"
+    assert_only tie.submit("btn text"),
       attrs:
         className: "btn edge"
       children: [
@@ -336,11 +321,10 @@ describe "InputTie.type.submit", ->
       currentTarget:
         value: "abcdef"
 
-    console.warn params
-    expect( tie.isValid() ).to.eq true
+    assert tie.isValid() == true
 
     tie.do_submit()
-    expect( state.action ).to.eq true
+    assert state.action == true
 
 
 

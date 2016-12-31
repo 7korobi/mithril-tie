@@ -16,19 +16,13 @@ module.exports = (grunt)->
 
     watch:
       make:
-        files: [
-          '{src,test}/**/*'
-        ]
+        files: ['{src,test}/**/*.coffee', 'package.json']
         tasks: ['make', 'spec']
       demo_coffee:
-        files: [
-          'demo/**/*.coffee'
-        ]
+        files: ['demo/**/*.coffee']
         tasks: ['coffee:demo']
       demo_pug:
-        files: [
-          'demo/**/*.pug'
-        ]
+        files: ['demo/**/*.pug']
         tasks: ['pug:demo']
 
     coffee:
@@ -61,12 +55,12 @@ module.exports = (grunt)->
           sourceMap: true
         files: {}
 
-    "mocha-chai-sinon":
-      build:
-        src: ['test/**/*.coffee']
+    mochaTest:
+      test:
         options:
-          ui: 'bdd'
-          reporter: 'list'
+          reporter: "min"
+          require: "intelli-espower-loader"
+        src: ["test-espower/**/*.js"]
 
     pug:
       demo:
@@ -80,24 +74,17 @@ module.exports = (grunt)->
         command: "webpack"
 
   config.coffee.src.files["#{pkg.name}.js"] =  ["src/**/_*.coffee", "src/**/*.coffee"]
+  config.coffee.src.files["test-espower/mocha.js"] = ["test/**/*.coffee"]
+
   config.uglify.js.files["#{pkg.name}.min.js"] = ["#{pkg.name}.js"]
   config.usebanner.js.files.src = ["#{pkg.name}.js"]
   grunt.initConfig config
 
-
-  grunt.loadNpmTasks 'grunt-contrib-coffee'
-  grunt.loadNpmTasks 'grunt-contrib-watch'
-  grunt.loadNpmTasks 'grunt-contrib-uglify'
-  grunt.loadNpmTasks 'grunt-banner'
-  grunt.loadNpmTasks "grunt-mocha-chai-sinon"
-
+  for task, ver of pkg.devDependencies when task[..5] == "grunt-"
+    grunt.loadNpmTasks task
 
   grunt.task.registerTask "default", ["demo", "make", "spec", "watch"]
   grunt.task.registerTask "make", ["coffee:src", "uglify", "usebanner"]
-  grunt.task.registerTask "spec", ["mocha-chai-sinon"]
-
-  grunt.loadNpmTasks 'grunt-shell-spawn'
-  grunt.loadNpmTasks 'grunt-contrib-pug'
-  grunt.loadNpmTasks 'grunt-shell'
+  grunt.task.registerTask "spec", ["mochaTest"]
   grunt.task.registerTask "demo", ["shell:demo", "coffee:demo", "pug:demo"]
 

@@ -59,8 +59,8 @@
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(global, module) {/**
 	 * @license
-	 * lodash <https://lodash.com/>
-	 * Copyright jQuery Foundation and other contributors <https://jquery.org/>
+	 * Lodash <https://lodash.com/>
+	 * Copyright JS Foundation and other contributors <https://js.foundation/>
 	 * Released under MIT license <https://lodash.com/license>
 	 * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
 	 * Copyright Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -71,13 +71,14 @@
 	  var undefined;
 	
 	  /** Used as the semantic version number. */
-	  var VERSION = '4.16.1';
+	  var VERSION = '4.17.3';
 	
 	  /** Used as the size to enable large array optimizations. */
 	  var LARGE_ARRAY_SIZE = 200;
 	
-	  /** Used as the `TypeError` message for "Functions" methods. */
-	  var FUNC_ERROR_TEXT = 'Expected a function';
+	  /** Error message constants. */
+	  var CORE_ERROR_TEXT = 'Unsupported core-js use. Try https://npms.io/search?q=ponyfill.',
+	      FUNC_ERROR_TEXT = 'Expected a function';
 	
 	  /** Used to stand-in for `undefined` hash values. */
 	  var HASH_UNDEFINED = '__lodash_hash_undefined__';
@@ -88,28 +89,33 @@
 	  /** Used as the internal argument placeholder. */
 	  var PLACEHOLDER = '__lodash_placeholder__';
 	
-	  /** Used to compose bitmasks for function metadata. */
-	  var BIND_FLAG = 1,
-	      BIND_KEY_FLAG = 2,
-	      CURRY_BOUND_FLAG = 4,
-	      CURRY_FLAG = 8,
-	      CURRY_RIGHT_FLAG = 16,
-	      PARTIAL_FLAG = 32,
-	      PARTIAL_RIGHT_FLAG = 64,
-	      ARY_FLAG = 128,
-	      REARG_FLAG = 256,
-	      FLIP_FLAG = 512;
+	  /** Used to compose bitmasks for cloning. */
+	  var CLONE_DEEP_FLAG = 1,
+	      CLONE_FLAT_FLAG = 2,
+	      CLONE_SYMBOLS_FLAG = 4;
 	
-	  /** Used to compose bitmasks for comparison styles. */
-	  var UNORDERED_COMPARE_FLAG = 1,
-	      PARTIAL_COMPARE_FLAG = 2;
+	  /** Used to compose bitmasks for value comparisons. */
+	  var COMPARE_PARTIAL_FLAG = 1,
+	      COMPARE_UNORDERED_FLAG = 2;
+	
+	  /** Used to compose bitmasks for function metadata. */
+	  var WRAP_BIND_FLAG = 1,
+	      WRAP_BIND_KEY_FLAG = 2,
+	      WRAP_CURRY_BOUND_FLAG = 4,
+	      WRAP_CURRY_FLAG = 8,
+	      WRAP_CURRY_RIGHT_FLAG = 16,
+	      WRAP_PARTIAL_FLAG = 32,
+	      WRAP_PARTIAL_RIGHT_FLAG = 64,
+	      WRAP_ARY_FLAG = 128,
+	      WRAP_REARG_FLAG = 256,
+	      WRAP_FLIP_FLAG = 512;
 	
 	  /** Used as default options for `_.truncate`. */
 	  var DEFAULT_TRUNC_LENGTH = 30,
 	      DEFAULT_TRUNC_OMISSION = '...';
 	
 	  /** Used to detect hot functions by number of calls within a span of milliseconds. */
-	  var HOT_COUNT = 500,
+	  var HOT_COUNT = 800,
 	      HOT_SPAN = 16;
 	
 	  /** Used to indicate the type of lazy iteratees. */
@@ -130,33 +136,38 @@
 	
 	  /** Used to associate wrap methods with their bit flags. */
 	  var wrapFlags = [
-	    ['ary', ARY_FLAG],
-	    ['bind', BIND_FLAG],
-	    ['bindKey', BIND_KEY_FLAG],
-	    ['curry', CURRY_FLAG],
-	    ['curryRight', CURRY_RIGHT_FLAG],
-	    ['flip', FLIP_FLAG],
-	    ['partial', PARTIAL_FLAG],
-	    ['partialRight', PARTIAL_RIGHT_FLAG],
-	    ['rearg', REARG_FLAG]
+	    ['ary', WRAP_ARY_FLAG],
+	    ['bind', WRAP_BIND_FLAG],
+	    ['bindKey', WRAP_BIND_KEY_FLAG],
+	    ['curry', WRAP_CURRY_FLAG],
+	    ['curryRight', WRAP_CURRY_RIGHT_FLAG],
+	    ['flip', WRAP_FLIP_FLAG],
+	    ['partial', WRAP_PARTIAL_FLAG],
+	    ['partialRight', WRAP_PARTIAL_RIGHT_FLAG],
+	    ['rearg', WRAP_REARG_FLAG]
 	  ];
 	
 	  /** `Object#toString` result references. */
 	  var argsTag = '[object Arguments]',
 	      arrayTag = '[object Array]',
+	      asyncTag = '[object AsyncFunction]',
 	      boolTag = '[object Boolean]',
 	      dateTag = '[object Date]',
+	      domExcTag = '[object DOMException]',
 	      errorTag = '[object Error]',
 	      funcTag = '[object Function]',
 	      genTag = '[object GeneratorFunction]',
 	      mapTag = '[object Map]',
 	      numberTag = '[object Number]',
+	      nullTag = '[object Null]',
 	      objectTag = '[object Object]',
 	      promiseTag = '[object Promise]',
+	      proxyTag = '[object Proxy]',
 	      regexpTag = '[object RegExp]',
 	      setTag = '[object Set]',
 	      stringTag = '[object String]',
 	      symbolTag = '[object Symbol]',
+	      undefinedTag = '[object Undefined]',
 	      weakMapTag = '[object WeakMap]',
 	      weakSetTag = '[object WeakSet]';
 	
@@ -252,8 +263,10 @@
 	
 	  /** Used to compose unicode character classes. */
 	  var rsAstralRange = '\\ud800-\\udfff',
-	      rsComboMarksRange = '\\u0300-\\u036f\\ufe20-\\ufe23',
-	      rsComboSymbolsRange = '\\u20d0-\\u20f0',
+	      rsComboMarksRange = '\\u0300-\\u036f',
+	      reComboHalfMarksRange = '\\ufe20-\\ufe2f',
+	      rsComboSymbolsRange = '\\u20d0-\\u20ff',
+	      rsComboRange = rsComboMarksRange + reComboHalfMarksRange + rsComboSymbolsRange,
 	      rsDingbatRange = '\\u2700-\\u27bf',
 	      rsLowerRange = 'a-z\\xdf-\\xf6\\xf8-\\xff',
 	      rsMathOpRange = '\\xac\\xb1\\xd7\\xf7',
@@ -268,7 +281,7 @@
 	  var rsApos = "['\u2019]",
 	      rsAstral = '[' + rsAstralRange + ']',
 	      rsBreak = '[' + rsBreakRange + ']',
-	      rsCombo = '[' + rsComboMarksRange + rsComboSymbolsRange + ']',
+	      rsCombo = '[' + rsComboRange + ']',
 	      rsDigits = '\\d+',
 	      rsDingbat = '[' + rsDingbatRange + ']',
 	      rsLower = '[' + rsLowerRange + ']',
@@ -282,13 +295,15 @@
 	      rsZWJ = '\\u200d';
 	
 	  /** Used to compose unicode regexes. */
-	  var rsLowerMisc = '(?:' + rsLower + '|' + rsMisc + ')',
-	      rsUpperMisc = '(?:' + rsUpper + '|' + rsMisc + ')',
-	      rsOptLowerContr = '(?:' + rsApos + '(?:d|ll|m|re|s|t|ve))?',
-	      rsOptUpperContr = '(?:' + rsApos + '(?:D|LL|M|RE|S|T|VE))?',
+	  var rsMiscLower = '(?:' + rsLower + '|' + rsMisc + ')',
+	      rsMiscUpper = '(?:' + rsUpper + '|' + rsMisc + ')',
+	      rsOptContrLower = '(?:' + rsApos + '(?:d|ll|m|re|s|t|ve))?',
+	      rsOptContrUpper = '(?:' + rsApos + '(?:D|LL|M|RE|S|T|VE))?',
 	      reOptMod = rsModifier + '?',
 	      rsOptVar = '[' + rsVarRange + ']?',
 	      rsOptJoin = '(?:' + rsZWJ + '(?:' + [rsNonAstral, rsRegional, rsSurrPair].join('|') + ')' + rsOptVar + reOptMod + ')*',
+	      rsOrdLower = '\\d*(?:(?:1st|2nd|3rd|(?![123])\\dth)\\b)',
+	      rsOrdUpper = '\\d*(?:(?:1ST|2ND|3RD|(?![123])\\dTH)\\b)',
 	      rsSeq = rsOptVar + reOptMod + rsOptJoin,
 	      rsEmoji = '(?:' + [rsDingbat, rsRegional, rsSurrPair].join('|') + ')' + rsSeq,
 	      rsSymbol = '(?:' + [rsNonAstral + rsCombo + '?', rsCombo, rsRegional, rsSurrPair, rsAstral].join('|') + ')';
@@ -307,16 +322,18 @@
 	
 	  /** Used to match complex or compound words. */
 	  var reUnicodeWord = RegExp([
-	    rsUpper + '?' + rsLower + '+' + rsOptLowerContr + '(?=' + [rsBreak, rsUpper, '$'].join('|') + ')',
-	    rsUpperMisc + '+' + rsOptUpperContr + '(?=' + [rsBreak, rsUpper + rsLowerMisc, '$'].join('|') + ')',
-	    rsUpper + '?' + rsLowerMisc + '+' + rsOptLowerContr,
-	    rsUpper + '+' + rsOptUpperContr,
+	    rsUpper + '?' + rsLower + '+' + rsOptContrLower + '(?=' + [rsBreak, rsUpper, '$'].join('|') + ')',
+	    rsMiscUpper + '+' + rsOptContrUpper + '(?=' + [rsBreak, rsUpper + rsMiscLower, '$'].join('|') + ')',
+	    rsUpper + '?' + rsMiscLower + '+' + rsOptContrLower,
+	    rsUpper + '+' + rsOptContrUpper,
+	    rsOrdUpper,
+	    rsOrdLower,
 	    rsDigits,
 	    rsEmoji
 	  ].join('|'), 'g');
 	
 	  /** Used to detect strings with [zero-width joiners or code points from the astral planes](http://eev.ee/blog/2015/09/12/dark-corners-of-unicode/). */
-	  var reHasUnicode = RegExp('[' + rsZWJ + rsAstralRange  + rsComboMarksRange + rsComboSymbolsRange + rsVarRange + ']');
+	  var reHasUnicode = RegExp('[' + rsZWJ + rsAstralRange  + rsComboRange + rsVarRange + ']');
 	
 	  /** Used to detect strings that need a more robust regexp to match words. */
 	  var reHasUnicodeWord = /[a-z][A-Z]|[A-Z]{2,}[a-z]|[0-9][a-zA-Z]|[a-zA-Z][0-9]|[^a-zA-Z0-9 ]/;
@@ -479,7 +496,7 @@
 	  /** Used to access faster Node.js helpers. */
 	  var nodeUtil = (function() {
 	    try {
-	      return freeProcess && freeProcess.binding('util');
+	      return freeProcess && freeProcess.binding && freeProcess.binding('util');
 	    } catch (e) {}
 	  }());
 	
@@ -553,7 +570,7 @@
 	   */
 	  function arrayAggregator(array, setter, iteratee, accumulator) {
 	    var index = -1,
-	        length = array ? array.length : 0;
+	        length = array == null ? 0 : array.length;
 	
 	    while (++index < length) {
 	      var value = array[index];
@@ -573,7 +590,7 @@
 	   */
 	  function arrayEach(array, iteratee) {
 	    var index = -1,
-	        length = array ? array.length : 0;
+	        length = array == null ? 0 : array.length;
 	
 	    while (++index < length) {
 	      if (iteratee(array[index], index, array) === false) {
@@ -593,7 +610,7 @@
 	   * @returns {Array} Returns `array`.
 	   */
 	  function arrayEachRight(array, iteratee) {
-	    var length = array ? array.length : 0;
+	    var length = array == null ? 0 : array.length;
 	
 	    while (length--) {
 	      if (iteratee(array[length], length, array) === false) {
@@ -615,7 +632,7 @@
 	   */
 	  function arrayEvery(array, predicate) {
 	    var index = -1,
-	        length = array ? array.length : 0;
+	        length = array == null ? 0 : array.length;
 	
 	    while (++index < length) {
 	      if (!predicate(array[index], index, array)) {
@@ -636,7 +653,7 @@
 	   */
 	  function arrayFilter(array, predicate) {
 	    var index = -1,
-	        length = array ? array.length : 0,
+	        length = array == null ? 0 : array.length,
 	        resIndex = 0,
 	        result = [];
 	
@@ -659,7 +676,7 @@
 	   * @returns {boolean} Returns `true` if `target` is found, else `false`.
 	   */
 	  function arrayIncludes(array, value) {
-	    var length = array ? array.length : 0;
+	    var length = array == null ? 0 : array.length;
 	    return !!length && baseIndexOf(array, value, 0) > -1;
 	  }
 	
@@ -674,7 +691,7 @@
 	   */
 	  function arrayIncludesWith(array, value, comparator) {
 	    var index = -1,
-	        length = array ? array.length : 0;
+	        length = array == null ? 0 : array.length;
 	
 	    while (++index < length) {
 	      if (comparator(value, array[index])) {
@@ -695,7 +712,7 @@
 	   */
 	  function arrayMap(array, iteratee) {
 	    var index = -1,
-	        length = array ? array.length : 0,
+	        length = array == null ? 0 : array.length,
 	        result = Array(length);
 	
 	    while (++index < length) {
@@ -737,7 +754,7 @@
 	   */
 	  function arrayReduce(array, iteratee, accumulator, initAccum) {
 	    var index = -1,
-	        length = array ? array.length : 0;
+	        length = array == null ? 0 : array.length;
 	
 	    if (initAccum && length) {
 	      accumulator = array[++index];
@@ -761,7 +778,7 @@
 	   * @returns {*} Returns the accumulated value.
 	   */
 	  function arrayReduceRight(array, iteratee, accumulator, initAccum) {
-	    var length = array ? array.length : 0;
+	    var length = array == null ? 0 : array.length;
 	    if (initAccum && length) {
 	      accumulator = array[--length];
 	    }
@@ -783,7 +800,7 @@
 	   */
 	  function arraySome(array, predicate) {
 	    var index = -1,
-	        length = array ? array.length : 0;
+	        length = array == null ? 0 : array.length;
 	
 	    while (++index < length) {
 	      if (predicate(array[index], index, array)) {
@@ -927,7 +944,7 @@
 	   * @returns {number} Returns the mean.
 	   */
 	  function baseMean(array, iteratee) {
-	    var length = array ? array.length : 0;
+	    var length = array == null ? 0 : array.length;
 	    return length ? (baseSum(array, iteratee) / length) : NAN;
 	  }
 	
@@ -1467,7 +1484,7 @@
 	   * var defer = _.runInContext({ 'setTimeout': setImmediate }).defer;
 	   */
 	  var runInContext = (function runInContext(context) {
-	    context = context ? _.defaults(root.Object(), context, _.pick(root, contextProps)) : root;
+	    context = context == null ? root : _.defaults(root.Object(), context, _.pick(root, contextProps));
 	
 	    /** Built-in constructor references. */
 	    var Array = context.Array,
@@ -1488,12 +1505,6 @@
 	    /** Used to detect overreaching core-js shims. */
 	    var coreJsData = context['__core-js_shared__'];
 	
-	    /** Used to detect methods masquerading as native. */
-	    var maskSrcKey = (function() {
-	      var uid = /[^.]+$/.exec(coreJsData && coreJsData.keys && coreJsData.keys.IE_PROTO || '');
-	      return uid ? ('Symbol(src)_1.' + uid) : '';
-	    }());
-	
 	    /** Used to resolve the decompiled source of functions. */
 	    var funcToString = funcProto.toString;
 	
@@ -1503,15 +1514,21 @@
 	    /** Used to generate unique IDs. */
 	    var idCounter = 0;
 	
-	    /** Used to infer the `Object` constructor. */
-	    var objectCtorString = funcToString.call(Object);
+	    /** Used to detect methods masquerading as native. */
+	    var maskSrcKey = (function() {
+	      var uid = /[^.]+$/.exec(coreJsData && coreJsData.keys && coreJsData.keys.IE_PROTO || '');
+	      return uid ? ('Symbol(src)_1.' + uid) : '';
+	    }());
 	
 	    /**
 	     * Used to resolve the
 	     * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
 	     * of values.
 	     */
-	    var objectToString = objectProto.toString;
+	    var nativeObjectToString = objectProto.toString;
+	
+	    /** Used to infer the `Object` constructor. */
+	    var objectCtorString = funcToString.call(Object);
 	
 	    /** Used to restore the original `_` reference in `_.noConflict`. */
 	    var oldDash = root._;
@@ -1526,13 +1543,22 @@
 	    var Buffer = moduleExports ? context.Buffer : undefined,
 	        Symbol = context.Symbol,
 	        Uint8Array = context.Uint8Array,
-	        defineProperty = Object.defineProperty,
+	        allocUnsafe = Buffer ? Buffer.allocUnsafe : undefined,
 	        getPrototype = overArg(Object.getPrototypeOf, Object),
-	        iteratorSymbol = Symbol ? Symbol.iterator : undefined,
 	        objectCreate = Object.create,
 	        propertyIsEnumerable = objectProto.propertyIsEnumerable,
 	        splice = arrayProto.splice,
-	        spreadableSymbol = Symbol ? Symbol.isConcatSpreadable : undefined;
+	        spreadableSymbol = Symbol ? Symbol.isConcatSpreadable : undefined,
+	        symIterator = Symbol ? Symbol.iterator : undefined,
+	        symToStringTag = Symbol ? Symbol.toStringTag : undefined;
+	
+	    var defineProperty = (function() {
+	      try {
+	        var func = getNative(Object, 'defineProperty');
+	        func({}, '', {});
+	        return func;
+	      } catch (e) {}
+	    }());
 	
 	    /** Mocked built-ins. */
 	    var ctxClearTimeout = context.clearTimeout !== root.clearTimeout && context.clearTimeout,
@@ -1560,8 +1586,7 @@
 	        Promise = getNative(context, 'Promise'),
 	        Set = getNative(context, 'Set'),
 	        WeakMap = getNative(context, 'WeakMap'),
-	        nativeCreate = getNative(Object, 'create'),
-	        nativeDefineProperty = getNative(Object, 'defineProperty');
+	        nativeCreate = getNative(Object, 'create');
 	
 	    /** Used to store function metadata. */
 	    var metaMap = WeakMap && new WeakMap;
@@ -1601,9 +1626,9 @@
 	     * Shortcut fusion is an optimization to merge iteratee calls; this avoids
 	     * the creation of intermediate arrays and can greatly reduce the number of
 	     * iteratee executions. Sections of a chain sequence qualify for shortcut
-	     * fusion if the section is applied to an array of at least `200` elements
-	     * and any iteratees accept only one argument. The heuristic for whether a
-	     * section qualifies for shortcut fusion is subject to change.
+	     * fusion if the section is applied to an array and iteratees accept only
+	     * one argument. The heuristic for whether a section qualifies for shortcut
+	     * fusion is subject to change.
 	     *
 	     * Chaining is supported in custom builds as long as the `_#value` method is
 	     * directly or indirectly included in the build.
@@ -1713,6 +1738,30 @@
 	    }
 	
 	    /**
+	     * The base implementation of `_.create` without support for assigning
+	     * properties to the created object.
+	     *
+	     * @private
+	     * @param {Object} proto The object to inherit from.
+	     * @returns {Object} Returns the new object.
+	     */
+	    var baseCreate = (function() {
+	      function object() {}
+	      return function(proto) {
+	        if (!isObject(proto)) {
+	          return {};
+	        }
+	        if (objectCreate) {
+	          return objectCreate(proto);
+	        }
+	        object.prototype = proto;
+	        var result = new object;
+	        object.prototype = undefined;
+	        return result;
+	      };
+	    }());
+	
+	    /**
 	     * The function whose prototype chain sequence wrappers inherit from.
 	     *
 	     * @private
@@ -1738,8 +1787,8 @@
 	
 	    /**
 	     * By default, the template delimiters used by lodash are like those in
-	     * embedded Ruby (ERB). Change the following template settings to use
-	     * alternative delimiters.
+	     * embedded Ruby (ERB) as well as ES2015 template strings. Change the
+	     * following template settings to use alternative delimiters.
 	     *
 	     * @static
 	     * @memberOf _
@@ -1886,8 +1935,7 @@
 	          resIndex = 0,
 	          takeCount = nativeMin(length, this.__takeCount__);
 	
-	      if (!isArr || arrLength < LARGE_ARRAY_SIZE ||
-	          (arrLength == length && takeCount == length)) {
+	      if (!isArr || (!isRight && arrLength == length && takeCount == length)) {
 	        return baseWrapperValue(array, this.__actions__);
 	      }
 	      var result = [];
@@ -1935,7 +1983,7 @@
 	     */
 	    function Hash(entries) {
 	      var index = -1,
-	          length = entries ? entries.length : 0;
+	          length = entries == null ? 0 : entries.length;
 	
 	      this.clear();
 	      while (++index < length) {
@@ -2001,7 +2049,7 @@
 	     */
 	    function hashHas(key) {
 	      var data = this.__data__;
-	      return nativeCreate ? data[key] !== undefined : hasOwnProperty.call(data, key);
+	      return nativeCreate ? (data[key] !== undefined) : hasOwnProperty.call(data, key);
 	    }
 	
 	    /**
@@ -2039,7 +2087,7 @@
 	     */
 	    function ListCache(entries) {
 	      var index = -1,
-	          length = entries ? entries.length : 0;
+	          length = entries == null ? 0 : entries.length;
 	
 	      this.clear();
 	      while (++index < length) {
@@ -2156,7 +2204,7 @@
 	     */
 	    function MapCache(entries) {
 	      var index = -1,
-	          length = entries ? entries.length : 0;
+	          length = entries == null ? 0 : entries.length;
 	
 	      this.clear();
 	      while (++index < length) {
@@ -2260,7 +2308,7 @@
 	     */
 	    function SetCache(values) {
 	      var index = -1,
-	          length = values ? values.length : 0;
+	          length = values == null ? 0 : values.length;
 	
 	      this.__data__ = new MapCache;
 	      while (++index < length) {
@@ -2413,18 +2461,26 @@
 	     * @returns {Array} Returns the array of property names.
 	     */
 	    function arrayLikeKeys(value, inherited) {
-	      // Safari 8.1 makes `arguments.callee` enumerable in strict mode.
-	      // Safari 9 makes `arguments.length` enumerable in strict mode.
-	      var result = (isArray(value) || isArguments(value))
-	        ? baseTimes(value.length, String)
-	        : [];
-	
-	      var length = result.length,
-	          skipIndexes = !!length;
+	      var isArr = isArray(value),
+	          isArg = !isArr && isArguments(value),
+	          isBuff = !isArr && !isArg && isBuffer(value),
+	          isType = !isArr && !isArg && !isBuff && isTypedArray(value),
+	          skipIndexes = isArr || isArg || isBuff || isType,
+	          result = skipIndexes ? baseTimes(value.length, String) : [],
+	          length = result.length;
 	
 	      for (var key in value) {
 	        if ((inherited || hasOwnProperty.call(value, key)) &&
-	            !(skipIndexes && (key == 'length' || isIndex(key, length)))) {
+	            !(skipIndexes && (
+	               // Safari 9 has enumerable `arguments.length` in strict mode.
+	               key == 'length' ||
+	               // Node.js 0.10 has enumerable non-index properties on buffers.
+	               (isBuff && (key == 'offset' || key == 'parent')) ||
+	               // PhantomJS 2 has enumerable non-index properties on typed arrays.
+	               (isType && (key == 'buffer' || key == 'byteLength' || key == 'byteOffset')) ||
+	               // Skip index properties.
+	               isIndex(key, length)
+	            ))) {
 	          result.push(key);
 	        }
 	      }
@@ -2432,8 +2488,7 @@
 	    }
 	
 	    /**
-	     * A specialized version of `_.sample` for arrays without support for iteratee
-	     * shorthands.
+	     * A specialized version of `_.sample` for arrays.
 	     *
 	     * @private
 	     * @param {Array} array The array to sample.
@@ -2453,9 +2508,7 @@
 	     * @returns {Array} Returns the random elements.
 	     */
 	    function arraySampleSize(array, n) {
-	      var result = arrayShuffle(array);
-	      result.length = baseClamp(n, 0, result.length);
-	      return result;
+	      return shuffleSelf(copyArray(array), baseClamp(n, 0, array.length));
 	    }
 	
 	    /**
@@ -2470,24 +2523,6 @@
 	    }
 	
 	    /**
-	     * Used by `_.defaults` to customize its `_.assignIn` use.
-	     *
-	     * @private
-	     * @param {*} objValue The destination value.
-	     * @param {*} srcValue The source value.
-	     * @param {string} key The key of the property to assign.
-	     * @param {Object} object The parent object of `objValue`.
-	     * @returns {*} Returns the value to assign.
-	     */
-	    function assignInDefaults(objValue, srcValue, key, object) {
-	      if (objValue === undefined ||
-	          (eq(objValue, objectProto[key]) && !hasOwnProperty.call(object, key))) {
-	        return srcValue;
-	      }
-	      return objValue;
-	    }
-	
-	    /**
 	     * This function is like `assignValue` except that it doesn't assign
 	     * `undefined` values.
 	     *
@@ -2498,7 +2533,7 @@
 	     */
 	    function assignMergeValue(object, key, value) {
 	      if ((value !== undefined && !eq(object[key], value)) ||
-	          (typeof key == 'number' && value === undefined && !(key in object))) {
+	          (value === undefined && !(key in object))) {
 	        baseAssignValue(object, key, value);
 	      }
 	    }
@@ -2571,6 +2606,19 @@
 	    }
 	
 	    /**
+	     * The base implementation of `_.assignIn` without support for multiple sources
+	     * or `customizer` functions.
+	     *
+	     * @private
+	     * @param {Object} object The destination object.
+	     * @param {Object} source The source object.
+	     * @returns {Object} Returns `object`.
+	     */
+	    function baseAssignIn(object, source) {
+	      return object && copyObject(source, keysIn(source), object);
+	    }
+	
+	    /**
 	     * The base implementation of `assignValue` and `assignMergeValue` without
 	     * value checks.
 	     *
@@ -2597,17 +2645,17 @@
 	     *
 	     * @private
 	     * @param {Object} object The object to iterate over.
-	     * @param {string[]} paths The property paths of elements to pick.
+	     * @param {string[]} paths The property paths to pick.
 	     * @returns {Array} Returns the picked elements.
 	     */
 	    function baseAt(object, paths) {
 	      var index = -1,
-	          isNil = object == null,
 	          length = paths.length,
-	          result = Array(length);
+	          result = Array(length),
+	          skip = object == null;
 	
 	      while (++index < length) {
-	        result[index] = isNil ? undefined : get(object, paths[index]);
+	        result[index] = skip ? undefined : get(object, paths[index]);
 	      }
 	      return result;
 	    }
@@ -2639,16 +2687,22 @@
 	     *
 	     * @private
 	     * @param {*} value The value to clone.
-	     * @param {boolean} [isDeep] Specify a deep clone.
-	     * @param {boolean} [isFull] Specify a clone including symbols.
+	     * @param {boolean} bitmask The bitmask flags.
+	     *  1 - Deep clone
+	     *  2 - Flatten inherited properties
+	     *  4 - Clone symbols
 	     * @param {Function} [customizer] The function to customize cloning.
 	     * @param {string} [key] The key of `value`.
 	     * @param {Object} [object] The parent object of `value`.
 	     * @param {Object} [stack] Tracks traversed objects and their clone counterparts.
 	     * @returns {*} Returns the cloned value.
 	     */
-	    function baseClone(value, isDeep, isFull, customizer, key, object, stack) {
-	      var result;
+	    function baseClone(value, bitmask, customizer, key, object, stack) {
+	      var result,
+	          isDeep = bitmask & CLONE_DEEP_FLAG,
+	          isFlat = bitmask & CLONE_FLAT_FLAG,
+	          isFull = bitmask & CLONE_SYMBOLS_FLAG;
+	
 	      if (customizer) {
 	        result = object ? customizer(value, key, object, stack) : customizer(value);
 	      }
@@ -2672,9 +2726,11 @@
 	          return cloneBuffer(value, isDeep);
 	        }
 	        if (tag == objectTag || tag == argsTag || (isFunc && !object)) {
-	          result = initCloneObject(isFunc ? {} : value);
+	          result = (isFlat || isFunc) ? {} : initCloneObject(value);
 	          if (!isDeep) {
-	            return copySymbols(value, baseAssign(result, value));
+	            return isFlat
+	              ? copySymbolsIn(value, baseAssignIn(result, value))
+	              : copySymbols(value, baseAssign(result, value));
 	          }
 	        } else {
 	          if (!cloneableTags[tag]) {
@@ -2691,16 +2747,18 @@
 	      }
 	      stack.set(value, result);
 	
-	      if (!isArr) {
-	        var props = isFull ? getAllKeys(value) : keys(value);
-	      }
+	      var keysFunc = isFull
+	        ? (isFlat ? getAllKeysIn : getAllKeys)
+	        : (isFlat ? keysIn : keys);
+	
+	      var props = isArr ? undefined : keysFunc(value);
 	      arrayEach(props || value, function(subValue, key) {
 	        if (props) {
 	          key = subValue;
 	          subValue = value[key];
 	        }
 	        // Recursively populate clone (susceptible to call stack limits).
-	        assignValue(result, key, baseClone(subValue, isDeep, isFull, customizer, key, value, stack));
+	        assignValue(result, key, baseClone(subValue, bitmask, customizer, key, value, stack));
 	      });
 	      return result;
 	    }
@@ -2743,18 +2801,6 @@
 	        }
 	      }
 	      return true;
-	    }
-	
-	    /**
-	     * The base implementation of `_.create` without support for assigning
-	     * properties to the created object.
-	     *
-	     * @private
-	     * @param {Object} prototype The object to inherit from.
-	     * @returns {Object} Returns the new object.
-	     */
-	    function baseCreate(proto) {
-	      return isObject(proto) ? objectCreate(proto) : {};
 	    }
 	
 	    /**
@@ -2811,7 +2857,7 @@
 	      outer:
 	      while (++index < length) {
 	        var value = array[index],
-	            computed = iteratee ? iteratee(value) : value;
+	            computed = iteratee == null ? value : iteratee(value);
 	
 	        value = (comparator || value !== 0) ? value : 0;
 	        if (isCommon && computed === computed) {
@@ -3050,7 +3096,7 @@
 	     * @returns {*} Returns the resolved value.
 	     */
 	    function baseGet(object, path) {
-	      path = isKey(path, object) ? [path] : castPath(path);
+	      path = castPath(path, object);
 	
 	      var index = 0,
 	          length = path.length;
@@ -3078,14 +3124,19 @@
 	    }
 	
 	    /**
-	     * The base implementation of `getTag`.
+	     * The base implementation of `getTag` without fallbacks for buggy environments.
 	     *
 	     * @private
 	     * @param {*} value The value to query.
 	     * @returns {string} Returns the `toStringTag`.
 	     */
 	    function baseGetTag(value) {
-	      return objectToString.call(value);
+	      if (value == null) {
+	        return value === undefined ? undefinedTag : nullTag;
+	      }
+	      return (symToStringTag && symToStringTag in Object(value))
+	        ? getRawTag(value)
+	        : objectToString(value);
 	    }
 	
 	    /**
@@ -3230,13 +3281,21 @@
 	     * @returns {*} Returns the result of the invoked method.
 	     */
 	    function baseInvoke(object, path, args) {
-	      if (!isKey(path, object)) {
-	        path = castPath(path);
-	        object = parent(object, path);
-	        path = last(path);
-	      }
-	      var func = object == null ? object : object[toKey(path)];
+	      path = castPath(path, object);
+	      object = parent(object, path);
+	      var func = object == null ? object : object[toKey(last(path))];
 	      return func == null ? undefined : apply(func, object, args);
+	    }
+	
+	    /**
+	     * The base implementation of `_.isArguments`.
+	     *
+	     * @private
+	     * @param {*} value The value to check.
+	     * @returns {boolean} Returns `true` if `value` is an `arguments` object,
+	     */
+	    function baseIsArguments(value) {
+	      return isObjectLike(value) && baseGetTag(value) == argsTag;
 	    }
 	
 	    /**
@@ -3247,7 +3306,7 @@
 	     * @returns {boolean} Returns `true` if `value` is an array buffer, else `false`.
 	     */
 	    function baseIsArrayBuffer(value) {
-	      return isObjectLike(value) && objectToString.call(value) == arrayBufferTag;
+	      return isObjectLike(value) && baseGetTag(value) == arrayBufferTag;
 	    }
 	
 	    /**
@@ -3258,7 +3317,7 @@
 	     * @returns {boolean} Returns `true` if `value` is a date object, else `false`.
 	     */
 	    function baseIsDate(value) {
-	      return isObjectLike(value) && objectToString.call(value) == dateTag;
+	      return isObjectLike(value) && baseGetTag(value) == dateTag;
 	    }
 	
 	    /**
@@ -3268,22 +3327,21 @@
 	     * @private
 	     * @param {*} value The value to compare.
 	     * @param {*} other The other value to compare.
+	     * @param {boolean} bitmask The bitmask flags.
+	     *  1 - Unordered comparison
+	     *  2 - Partial comparison
 	     * @param {Function} [customizer] The function to customize comparisons.
-	     * @param {boolean} [bitmask] The bitmask of comparison flags.
-	     *  The bitmask may be composed of the following flags:
-	     *     1 - Unordered comparison
-	     *     2 - Partial comparison
 	     * @param {Object} [stack] Tracks traversed `value` and `other` objects.
 	     * @returns {boolean} Returns `true` if the values are equivalent, else `false`.
 	     */
-	    function baseIsEqual(value, other, customizer, bitmask, stack) {
+	    function baseIsEqual(value, other, bitmask, customizer, stack) {
 	      if (value === other) {
 	        return true;
 	      }
-	      if (value == null || other == null || (!isObject(value) && !isObjectLike(other))) {
+	      if (value == null || other == null || (!isObjectLike(value) && !isObjectLike(other))) {
 	        return value !== value && other !== other;
 	      }
-	      return baseIsEqualDeep(value, other, baseIsEqual, customizer, bitmask, stack);
+	      return baseIsEqualDeep(value, other, bitmask, customizer, baseIsEqual, stack);
 	    }
 	
 	    /**
@@ -3294,38 +3352,39 @@
 	     * @private
 	     * @param {Object} object The object to compare.
 	     * @param {Object} other The other object to compare.
+	     * @param {number} bitmask The bitmask flags. See `baseIsEqual` for more details.
+	     * @param {Function} customizer The function to customize comparisons.
 	     * @param {Function} equalFunc The function to determine equivalents of values.
-	     * @param {Function} [customizer] The function to customize comparisons.
-	     * @param {number} [bitmask] The bitmask of comparison flags. See `baseIsEqual`
-	     *  for more details.
 	     * @param {Object} [stack] Tracks traversed `object` and `other` objects.
 	     * @returns {boolean} Returns `true` if the objects are equivalent, else `false`.
 	     */
-	    function baseIsEqualDeep(object, other, equalFunc, customizer, bitmask, stack) {
+	    function baseIsEqualDeep(object, other, bitmask, customizer, equalFunc, stack) {
 	      var objIsArr = isArray(object),
 	          othIsArr = isArray(other),
-	          objTag = arrayTag,
-	          othTag = arrayTag;
+	          objTag = objIsArr ? arrayTag : getTag(object),
+	          othTag = othIsArr ? arrayTag : getTag(other);
 	
-	      if (!objIsArr) {
-	        objTag = getTag(object);
-	        objTag = objTag == argsTag ? objectTag : objTag;
-	      }
-	      if (!othIsArr) {
-	        othTag = getTag(other);
-	        othTag = othTag == argsTag ? objectTag : othTag;
-	      }
+	      objTag = objTag == argsTag ? objectTag : objTag;
+	      othTag = othTag == argsTag ? objectTag : othTag;
+	
 	      var objIsObj = objTag == objectTag,
 	          othIsObj = othTag == objectTag,
 	          isSameTag = objTag == othTag;
 	
+	      if (isSameTag && isBuffer(object)) {
+	        if (!isBuffer(other)) {
+	          return false;
+	        }
+	        objIsArr = true;
+	        objIsObj = false;
+	      }
 	      if (isSameTag && !objIsObj) {
 	        stack || (stack = new Stack);
 	        return (objIsArr || isTypedArray(object))
-	          ? equalArrays(object, other, equalFunc, customizer, bitmask, stack)
-	          : equalByTag(object, other, objTag, equalFunc, customizer, bitmask, stack);
+	          ? equalArrays(object, other, bitmask, customizer, equalFunc, stack)
+	          : equalByTag(object, other, objTag, bitmask, customizer, equalFunc, stack);
 	      }
-	      if (!(bitmask & PARTIAL_COMPARE_FLAG)) {
+	      if (!(bitmask & COMPARE_PARTIAL_FLAG)) {
 	        var objIsWrapped = objIsObj && hasOwnProperty.call(object, '__wrapped__'),
 	            othIsWrapped = othIsObj && hasOwnProperty.call(other, '__wrapped__');
 	
@@ -3334,14 +3393,14 @@
 	              othUnwrapped = othIsWrapped ? other.value() : other;
 	
 	          stack || (stack = new Stack);
-	          return equalFunc(objUnwrapped, othUnwrapped, customizer, bitmask, stack);
+	          return equalFunc(objUnwrapped, othUnwrapped, bitmask, customizer, stack);
 	        }
 	      }
 	      if (!isSameTag) {
 	        return false;
 	      }
 	      stack || (stack = new Stack);
-	      return equalObjects(object, other, equalFunc, customizer, bitmask, stack);
+	      return equalObjects(object, other, bitmask, customizer, equalFunc, stack);
 	    }
 	
 	    /**
@@ -3399,7 +3458,7 @@
 	            var result = customizer(objValue, srcValue, key, object, source, stack);
 	          }
 	          if (!(result === undefined
-	                ? baseIsEqual(srcValue, objValue, customizer, UNORDERED_COMPARE_FLAG | PARTIAL_COMPARE_FLAG, stack)
+	                ? baseIsEqual(srcValue, objValue, COMPARE_PARTIAL_FLAG | COMPARE_UNORDERED_FLAG, customizer, stack)
 	                : result
 	              )) {
 	            return false;
@@ -3433,7 +3492,7 @@
 	     * @returns {boolean} Returns `true` if `value` is a regexp, else `false`.
 	     */
 	    function baseIsRegExp(value) {
-	      return isObject(value) && objectToString.call(value) == regexpTag;
+	      return isObjectLike(value) && baseGetTag(value) == regexpTag;
 	    }
 	
 	    /**
@@ -3456,7 +3515,7 @@
 	     */
 	    function baseIsTypedArray(value) {
 	      return isObjectLike(value) &&
-	        isLength(value.length) && !!typedArrayTags[objectToString.call(value)];
+	        isLength(value.length) && !!typedArrayTags[baseGetTag(value)];
 	    }
 	
 	    /**
@@ -3589,7 +3648,7 @@
 	        var objValue = get(object, path);
 	        return (objValue === undefined && objValue === srcValue)
 	          ? hasIn(object, path)
-	          : baseIsEqual(srcValue, objValue, undefined, UNORDERED_COMPARE_FLAG | PARTIAL_COMPARE_FLAG);
+	          : baseIsEqual(srcValue, objValue, COMPARE_PARTIAL_FLAG | COMPARE_UNORDERED_FLAG);
 	      };
 	    }
 	
@@ -3608,14 +3667,7 @@
 	      if (object === source) {
 	        return;
 	      }
-	      if (!(isArray(source) || isTypedArray(source))) {
-	        var props = baseKeysIn(source);
-	      }
-	      arrayEach(props || source, function(srcValue, key) {
-	        if (props) {
-	          key = srcValue;
-	          srcValue = source[key];
-	        }
+	      baseFor(source, function(srcValue, key) {
 	        if (isObject(srcValue)) {
 	          stack || (stack = new Stack);
 	          baseMergeDeep(object, source, key, srcIndex, baseMerge, customizer, stack);
@@ -3630,7 +3682,7 @@
 	          }
 	          assignMergeValue(object, key, newValue);
 	        }
-	      });
+	      }, keysIn);
 	    }
 	
 	    /**
@@ -3664,29 +3716,37 @@
 	      var isCommon = newValue === undefined;
 	
 	      if (isCommon) {
+	        var isArr = isArray(srcValue),
+	            isBuff = !isArr && isBuffer(srcValue),
+	            isTyped = !isArr && !isBuff && isTypedArray(srcValue);
+	
 	        newValue = srcValue;
-	        if (isArray(srcValue) || isTypedArray(srcValue)) {
+	        if (isArr || isBuff || isTyped) {
 	          if (isArray(objValue)) {
 	            newValue = objValue;
 	          }
 	          else if (isArrayLikeObject(objValue)) {
 	            newValue = copyArray(objValue);
 	          }
-	          else {
+	          else if (isBuff) {
 	            isCommon = false;
-	            newValue = baseClone(srcValue, true);
+	            newValue = cloneBuffer(srcValue, true);
+	          }
+	          else if (isTyped) {
+	            isCommon = false;
+	            newValue = cloneTypedArray(srcValue, true);
+	          }
+	          else {
+	            newValue = [];
 	          }
 	        }
 	        else if (isPlainObject(srcValue) || isArguments(srcValue)) {
+	          newValue = objValue;
 	          if (isArguments(objValue)) {
 	            newValue = toPlainObject(objValue);
 	          }
 	          else if (!isObject(objValue) || (srcIndex && isFunction(objValue))) {
-	            isCommon = false;
-	            newValue = baseClone(srcValue, true);
-	          }
-	          else {
-	            newValue = objValue;
+	            newValue = initCloneObject(srcValue);
 	          }
 	        }
 	        else {
@@ -3750,13 +3810,12 @@
 	     *
 	     * @private
 	     * @param {Object} object The source object.
-	     * @param {string[]} props The property identifiers to pick.
+	     * @param {string[]} paths The property paths to pick.
 	     * @returns {Object} Returns the new object.
 	     */
-	    function basePick(object, props) {
-	      object = Object(object);
-	      return basePickBy(object, props, function(value, key) {
-	        return key in object;
+	    function basePick(object, paths) {
+	      return basePickBy(object, paths, function(value, path) {
+	        return hasIn(object, path);
 	      });
 	    }
 	
@@ -3765,21 +3824,21 @@
 	     *
 	     * @private
 	     * @param {Object} object The source object.
-	     * @param {string[]} props The property identifiers to pick from.
+	     * @param {string[]} paths The property paths to pick.
 	     * @param {Function} predicate The function invoked per property.
 	     * @returns {Object} Returns the new object.
 	     */
-	    function basePickBy(object, props, predicate) {
+	    function basePickBy(object, paths, predicate) {
 	      var index = -1,
-	          length = props.length,
+	          length = paths.length,
 	          result = {};
 	
 	      while (++index < length) {
-	        var key = props[index],
-	            value = object[key];
+	        var path = paths[index],
+	            value = baseGet(object, path);
 	
-	        if (predicate(value, key)) {
-	          baseAssignValue(result, key, value);
+	        if (predicate(value, path)) {
+	          baseSet(result, castPath(path, object), value);
 	        }
 	      }
 	      return result;
@@ -3855,17 +3914,8 @@
 	          var previous = index;
 	          if (isIndex(index)) {
 	            splice.call(array, index, 1);
-	          }
-	          else if (!isKey(index, array)) {
-	            var path = castPath(index),
-	                object = parent(array, path);
-	
-	            if (object != null) {
-	              delete object[toKey(last(path))];
-	            }
-	          }
-	          else {
-	            delete array[toKey(index)];
+	          } else {
+	            baseUnset(array, index);
 	          }
 	        }
 	      }
@@ -3949,6 +3999,30 @@
 	    }
 	
 	    /**
+	     * The base implementation of `_.sample`.
+	     *
+	     * @private
+	     * @param {Array|Object} collection The collection to sample.
+	     * @returns {*} Returns the random element.
+	     */
+	    function baseSample(collection) {
+	      return arraySample(values(collection));
+	    }
+	
+	    /**
+	     * The base implementation of `_.sampleSize` without param guards.
+	     *
+	     * @private
+	     * @param {Array|Object} collection The collection to sample.
+	     * @param {number} n The number of elements to sample.
+	     * @returns {Array} Returns the random elements.
+	     */
+	    function baseSampleSize(collection, n) {
+	      var array = values(collection);
+	      return shuffleSelf(array, baseClamp(n, 0, array.length));
+	    }
+	
+	    /**
 	     * The base implementation of `_.set`.
 	     *
 	     * @private
@@ -3962,7 +4036,7 @@
 	      if (!isObject(object)) {
 	        return object;
 	      }
-	      path = isKey(path, object) ? [path] : castPath(path);
+	      path = castPath(path, object);
 	
 	      var index = -1,
 	          length = path.length,
@@ -4009,14 +4083,25 @@
 	     * @param {Function} string The `toString` result.
 	     * @returns {Function} Returns `func`.
 	     */
-	    var baseSetToString = !nativeDefineProperty ? identity : function(func, string) {
-	      return nativeDefineProperty(func, 'toString', {
+	    var baseSetToString = !defineProperty ? identity : function(func, string) {
+	      return defineProperty(func, 'toString', {
 	        'configurable': true,
 	        'enumerable': false,
 	        'value': constant(string),
 	        'writable': true
 	      });
 	    };
+	
+	    /**
+	     * The base implementation of `_.shuffle`.
+	     *
+	     * @private
+	     * @param {Array|Object} collection The collection to shuffle.
+	     * @returns {Array} Returns the new shuffled array.
+	     */
+	    function baseShuffle(collection) {
+	      return shuffleSelf(values(collection));
+	    }
 	
 	    /**
 	     * The base implementation of `_.slice` without an iteratee call guard.
@@ -4081,7 +4166,7 @@
 	     */
 	    function baseSortedIndex(array, value, retHighest) {
 	      var low = 0,
-	          high = array ? array.length : low;
+	          high = array == null ? low : array.length;
 	
 	      if (typeof value == 'number' && value === value && high <= HALF_MAX_ARRAY_LENGTH) {
 	        while (low < high) {
@@ -4117,7 +4202,7 @@
 	      value = iteratee(value);
 	
 	      var low = 0,
-	          high = array ? array.length : 0,
+	          high = array == null ? 0 : array.length,
 	          valIsNaN = value !== value,
 	          valIsNull = value === null,
 	          valIsSymbol = isSymbol(value),
@@ -4211,6 +4296,10 @@
 	      if (typeof value == 'string') {
 	        return value;
 	      }
+	      if (isArray(value)) {
+	        // Recursively convert values (susceptible to call stack limits).
+	        return arrayMap(value, baseToString) + '';
+	      }
 	      if (isSymbol(value)) {
 	        return symbolToString ? symbolToString.call(value) : '';
 	      }
@@ -4284,15 +4373,13 @@
 	     *
 	     * @private
 	     * @param {Object} object The object to modify.
-	     * @param {Array|string} path The path of the property to unset.
+	     * @param {Array|string} path The property path to unset.
 	     * @returns {boolean} Returns `true` if the property is deleted, else `false`.
 	     */
 	    function baseUnset(object, path) {
-	      path = isKey(path, object) ? [path] : castPath(path);
+	      path = castPath(path, object);
 	      object = parent(object, path);
-	
-	      var key = toKey(last(path));
-	      return !(object != null && hasOwnProperty.call(object, key)) || delete object[key];
+	      return object == null || delete object[toKey(last(path))];
 	    }
 	
 	    /**
@@ -4363,18 +4450,24 @@
 	     * @returns {Array} Returns the new array of values.
 	     */
 	    function baseXor(arrays, iteratee, comparator) {
+	      var length = arrays.length;
+	      if (length < 2) {
+	        return length ? baseUniq(arrays[0]) : [];
+	      }
 	      var index = -1,
-	          length = arrays.length;
+	          result = Array(length);
 	
 	      while (++index < length) {
-	        var result = result
-	          ? arrayPush(
-	              baseDifference(result, arrays[index], iteratee, comparator),
-	              baseDifference(arrays[index], result, iteratee, comparator)
-	            )
-	          : arrays[index];
+	        var array = arrays[index],
+	            othIndex = -1;
+	
+	        while (++othIndex < length) {
+	          if (othIndex != index) {
+	            result[index] = baseDifference(result[index] || array, arrays[othIndex], iteratee, comparator);
+	          }
+	        }
 	      }
-	      return (result && result.length) ? baseUniq(result, iteratee, comparator) : [];
+	      return baseUniq(baseFlatten(result, 1), iteratee, comparator);
 	    }
 	
 	    /**
@@ -4426,10 +4519,14 @@
 	     *
 	     * @private
 	     * @param {*} value The value to inspect.
+	     * @param {Object} [object] The object to query keys on.
 	     * @returns {Array} Returns the cast property path array.
 	     */
-	    function castPath(value) {
-	      return isArray(value) ? value : stringToPath(value);
+	    function castPath(value, object) {
+	      if (isArray(value)) {
+	        return value;
+	      }
+	      return isKey(value, object) ? [value] : stringToPath(toString(value));
 	    }
 	
 	    /**
@@ -4480,7 +4577,9 @@
 	      if (isDeep) {
 	        return buffer.slice();
 	      }
-	      var result = new buffer.constructor(buffer.length);
+	      var length = buffer.length,
+	          result = allocUnsafe ? allocUnsafe(length) : new buffer.constructor(length);
+	
 	      buffer.copy(result);
 	      return result;
 	    }
@@ -4521,7 +4620,7 @@
 	     * @returns {Object} Returns the cloned map.
 	     */
 	    function cloneMap(map, isDeep, cloneFunc) {
-	      var array = isDeep ? cloneFunc(mapToArray(map), true) : mapToArray(map);
+	      var array = isDeep ? cloneFunc(mapToArray(map), CLONE_DEEP_FLAG) : mapToArray(map);
 	      return arrayReduce(array, addMapEntry, new map.constructor);
 	    }
 	
@@ -4548,7 +4647,7 @@
 	     * @returns {Object} Returns the cloned set.
 	     */
 	    function cloneSet(set, isDeep, cloneFunc) {
-	      var array = isDeep ? cloneFunc(setToArray(set), true) : setToArray(set);
+	      var array = isDeep ? cloneFunc(setToArray(set), CLONE_DEEP_FLAG) : setToArray(set);
 	      return arrayReduce(array, addSetEntry, new set.constructor);
 	    }
 	
@@ -4783,7 +4882,7 @@
 	    }
 	
 	    /**
-	     * Copies own symbol properties of `source` to `object`.
+	     * Copies own symbols of `source` to `object`.
 	     *
 	     * @private
 	     * @param {Object} source The object to copy symbols from.
@@ -4792,6 +4891,18 @@
 	     */
 	    function copySymbols(source, object) {
 	      return copyObject(source, getSymbols(source), object);
+	    }
+	
+	    /**
+	     * Copies own and inherited symbols of `source` to `object`.
+	     *
+	     * @private
+	     * @param {Object} source The object to copy symbols from.
+	     * @param {Object} [object={}] The object to copy symbols to.
+	     * @returns {Object} Returns `object`.
+	     */
+	    function copySymbolsIn(source, object) {
+	      return copyObject(source, getSymbolsIn(source), object);
 	    }
 	
 	    /**
@@ -4908,7 +5019,7 @@
 	     * @returns {Function} Returns the new wrapped function.
 	     */
 	    function createBind(func, bitmask, thisArg) {
-	      var isBind = bitmask & BIND_FLAG,
+	      var isBind = bitmask & WRAP_BIND_FLAG,
 	          Ctor = createCtor(func);
 	
 	      function wrapper() {
@@ -5081,7 +5192,7 @@
 	              data = funcName == 'wrapper' ? getData(func) : undefined;
 	
 	          if (data && isLaziable(data[0]) &&
-	                data[1] == (ARY_FLAG | CURRY_FLAG | PARTIAL_FLAG | REARG_FLAG) &&
+	                data[1] == (WRAP_ARY_FLAG | WRAP_CURRY_FLAG | WRAP_PARTIAL_FLAG | WRAP_REARG_FLAG) &&
 	                !data[4].length && data[9] == 1
 	              ) {
 	            wrapper = wrapper[getFuncName(data[0])].apply(wrapper, data[3]);
@@ -5095,8 +5206,7 @@
 	          var args = arguments,
 	              value = args[0];
 	
-	          if (wrapper && args.length == 1 &&
-	              isArray(value) && value.length >= LARGE_ARRAY_SIZE) {
+	          if (wrapper && args.length == 1 && isArray(value)) {
 	            return wrapper.plant(value).value();
 	          }
 	          var index = 0,
@@ -5130,11 +5240,11 @@
 	     * @returns {Function} Returns the new wrapped function.
 	     */
 	    function createHybrid(func, bitmask, thisArg, partials, holders, partialsRight, holdersRight, argPos, ary, arity) {
-	      var isAry = bitmask & ARY_FLAG,
-	          isBind = bitmask & BIND_FLAG,
-	          isBindKey = bitmask & BIND_KEY_FLAG,
-	          isCurried = bitmask & (CURRY_FLAG | CURRY_RIGHT_FLAG),
-	          isFlip = bitmask & FLIP_FLAG,
+	      var isAry = bitmask & WRAP_ARY_FLAG,
+	          isBind = bitmask & WRAP_BIND_FLAG,
+	          isBindKey = bitmask & WRAP_BIND_KEY_FLAG,
+	          isCurried = bitmask & (WRAP_CURRY_FLAG | WRAP_CURRY_RIGHT_FLAG),
+	          isFlip = bitmask & WRAP_FLIP_FLAG,
 	          Ctor = isBindKey ? undefined : createCtor(func);
 	
 	      function wrapper() {
@@ -5285,7 +5395,7 @@
 	     * @returns {Function} Returns the new wrapped function.
 	     */
 	    function createPartial(func, bitmask, thisArg, partials) {
-	      var isBind = bitmask & BIND_FLAG,
+	      var isBind = bitmask & WRAP_BIND_FLAG,
 	          Ctor = createCtor(func);
 	
 	      function wrapper() {
@@ -5367,17 +5477,17 @@
 	     * @returns {Function} Returns the new wrapped function.
 	     */
 	    function createRecurry(func, bitmask, wrapFunc, placeholder, thisArg, partials, holders, argPos, ary, arity) {
-	      var isCurry = bitmask & CURRY_FLAG,
+	      var isCurry = bitmask & WRAP_CURRY_FLAG,
 	          newHolders = isCurry ? holders : undefined,
 	          newHoldersRight = isCurry ? undefined : holders,
 	          newPartials = isCurry ? partials : undefined,
 	          newPartialsRight = isCurry ? undefined : partials;
 	
-	      bitmask |= (isCurry ? PARTIAL_FLAG : PARTIAL_RIGHT_FLAG);
-	      bitmask &= ~(isCurry ? PARTIAL_RIGHT_FLAG : PARTIAL_FLAG);
+	      bitmask |= (isCurry ? WRAP_PARTIAL_FLAG : WRAP_PARTIAL_RIGHT_FLAG);
+	      bitmask &= ~(isCurry ? WRAP_PARTIAL_RIGHT_FLAG : WRAP_PARTIAL_FLAG);
 	
-	      if (!(bitmask & CURRY_BOUND_FLAG)) {
-	        bitmask &= ~(BIND_FLAG | BIND_KEY_FLAG);
+	      if (!(bitmask & WRAP_CURRY_BOUND_FLAG)) {
+	        bitmask &= ~(WRAP_BIND_FLAG | WRAP_BIND_KEY_FLAG);
 	      }
 	      var newData = [
 	        func, bitmask, thisArg, newPartials, newHolders, newPartialsRight,
@@ -5403,7 +5513,7 @@
 	      var func = Math[methodName];
 	      return function(number, precision) {
 	        number = toNumber(number);
-	        precision = nativeMin(toInteger(precision), 292);
+	        precision = precision == null ? 0 : nativeMin(toInteger(precision), 292);
 	        if (precision) {
 	          // Shift with exponential notation to avoid floating-point issues.
 	          // See [MDN](https://mdn.io/round#Examples) for more details.
@@ -5455,17 +5565,16 @@
 	     * @private
 	     * @param {Function|string} func The function or method name to wrap.
 	     * @param {number} bitmask The bitmask flags.
-	     *  The bitmask may be composed of the following flags:
-	     *     1 - `_.bind`
-	     *     2 - `_.bindKey`
-	     *     4 - `_.curry` or `_.curryRight` of a bound function
-	     *     8 - `_.curry`
-	     *    16 - `_.curryRight`
-	     *    32 - `_.partial`
-	     *    64 - `_.partialRight`
-	     *   128 - `_.rearg`
-	     *   256 - `_.ary`
-	     *   512 - `_.flip`
+	     *    1 - `_.bind`
+	     *    2 - `_.bindKey`
+	     *    4 - `_.curry` or `_.curryRight` of a bound function
+	     *    8 - `_.curry`
+	     *   16 - `_.curryRight`
+	     *   32 - `_.partial`
+	     *   64 - `_.partialRight`
+	     *  128 - `_.rearg`
+	     *  256 - `_.ary`
+	     *  512 - `_.flip`
 	     * @param {*} [thisArg] The `this` binding of `func`.
 	     * @param {Array} [partials] The arguments to be partially applied.
 	     * @param {Array} [holders] The `partials` placeholder indexes.
@@ -5475,20 +5584,20 @@
 	     * @returns {Function} Returns the new wrapped function.
 	     */
 	    function createWrap(func, bitmask, thisArg, partials, holders, argPos, ary, arity) {
-	      var isBindKey = bitmask & BIND_KEY_FLAG;
+	      var isBindKey = bitmask & WRAP_BIND_KEY_FLAG;
 	      if (!isBindKey && typeof func != 'function') {
 	        throw new TypeError(FUNC_ERROR_TEXT);
 	      }
 	      var length = partials ? partials.length : 0;
 	      if (!length) {
-	        bitmask &= ~(PARTIAL_FLAG | PARTIAL_RIGHT_FLAG);
+	        bitmask &= ~(WRAP_PARTIAL_FLAG | WRAP_PARTIAL_RIGHT_FLAG);
 	        partials = holders = undefined;
 	      }
 	      ary = ary === undefined ? ary : nativeMax(toInteger(ary), 0);
 	      arity = arity === undefined ? arity : toInteger(arity);
 	      length -= holders ? holders.length : 0;
 	
-	      if (bitmask & PARTIAL_RIGHT_FLAG) {
+	      if (bitmask & WRAP_PARTIAL_RIGHT_FLAG) {
 	        var partialsRight = partials,
 	            holdersRight = holders;
 	
@@ -5509,18 +5618,18 @@
 	      thisArg = newData[2];
 	      partials = newData[3];
 	      holders = newData[4];
-	      arity = newData[9] = newData[9] == null
+	      arity = newData[9] = newData[9] === undefined
 	        ? (isBindKey ? 0 : func.length)
 	        : nativeMax(newData[9] - length, 0);
 	
-	      if (!arity && bitmask & (CURRY_FLAG | CURRY_RIGHT_FLAG)) {
-	        bitmask &= ~(CURRY_FLAG | CURRY_RIGHT_FLAG);
+	      if (!arity && bitmask & (WRAP_CURRY_FLAG | WRAP_CURRY_RIGHT_FLAG)) {
+	        bitmask &= ~(WRAP_CURRY_FLAG | WRAP_CURRY_RIGHT_FLAG);
 	      }
-	      if (!bitmask || bitmask == BIND_FLAG) {
+	      if (!bitmask || bitmask == WRAP_BIND_FLAG) {
 	        var result = createBind(func, bitmask, thisArg);
-	      } else if (bitmask == CURRY_FLAG || bitmask == CURRY_RIGHT_FLAG) {
+	      } else if (bitmask == WRAP_CURRY_FLAG || bitmask == WRAP_CURRY_RIGHT_FLAG) {
 	        result = createCurry(func, bitmask, arity);
-	      } else if ((bitmask == PARTIAL_FLAG || bitmask == (BIND_FLAG | PARTIAL_FLAG)) && !holders.length) {
+	      } else if ((bitmask == WRAP_PARTIAL_FLAG || bitmask == (WRAP_BIND_FLAG | WRAP_PARTIAL_FLAG)) && !holders.length) {
 	        result = createPartial(func, bitmask, thisArg, partials);
 	      } else {
 	        result = createHybrid.apply(undefined, newData);
@@ -5530,21 +5639,77 @@
 	    }
 	
 	    /**
+	     * Used by `_.defaults` to customize its `_.assignIn` use to assign properties
+	     * of source objects to the destination object for all destination properties
+	     * that resolve to `undefined`.
+	     *
+	     * @private
+	     * @param {*} objValue The destination value.
+	     * @param {*} srcValue The source value.
+	     * @param {string} key The key of the property to assign.
+	     * @param {Object} object The parent object of `objValue`.
+	     * @returns {*} Returns the value to assign.
+	     */
+	    function customDefaultsAssignIn(objValue, srcValue, key, object) {
+	      if (objValue === undefined ||
+	          (eq(objValue, objectProto[key]) && !hasOwnProperty.call(object, key))) {
+	        return srcValue;
+	      }
+	      return objValue;
+	    }
+	
+	    /**
+	     * Used by `_.defaultsDeep` to customize its `_.merge` use to merge source
+	     * objects into destination objects that are passed thru.
+	     *
+	     * @private
+	     * @param {*} objValue The destination value.
+	     * @param {*} srcValue The source value.
+	     * @param {string} key The key of the property to merge.
+	     * @param {Object} object The parent object of `objValue`.
+	     * @param {Object} source The parent object of `srcValue`.
+	     * @param {Object} [stack] Tracks traversed source values and their merged
+	     *  counterparts.
+	     * @returns {*} Returns the value to assign.
+	     */
+	    function customDefaultsMerge(objValue, srcValue, key, object, source, stack) {
+	      if (isObject(objValue) && isObject(srcValue)) {
+	        // Recursively merge objects and arrays (susceptible to call stack limits).
+	        stack.set(srcValue, objValue);
+	        baseMerge(objValue, srcValue, undefined, customDefaultsMerge, stack);
+	        stack['delete'](srcValue);
+	      }
+	      return objValue;
+	    }
+	
+	    /**
+	     * Used by `_.omit` to customize its `_.cloneDeep` use to only clone plain
+	     * objects.
+	     *
+	     * @private
+	     * @param {*} value The value to inspect.
+	     * @param {string} key The key of the property to inspect.
+	     * @returns {*} Returns the uncloned value or `undefined` to defer cloning to `_.cloneDeep`.
+	     */
+	    function customOmitClone(value, key) {
+	      return (key !== undefined && isPlainObject(value)) ? undefined : value;
+	    }
+	
+	    /**
 	     * A specialized version of `baseIsEqualDeep` for arrays with support for
 	     * partial deep comparisons.
 	     *
 	     * @private
 	     * @param {Array} array The array to compare.
 	     * @param {Array} other The other array to compare.
-	     * @param {Function} equalFunc The function to determine equivalents of values.
+	     * @param {number} bitmask The bitmask flags. See `baseIsEqual` for more details.
 	     * @param {Function} customizer The function to customize comparisons.
-	     * @param {number} bitmask The bitmask of comparison flags. See `baseIsEqual`
-	     *  for more details.
+	     * @param {Function} equalFunc The function to determine equivalents of values.
 	     * @param {Object} stack Tracks traversed `array` and `other` objects.
 	     * @returns {boolean} Returns `true` if the arrays are equivalent, else `false`.
 	     */
-	    function equalArrays(array, other, equalFunc, customizer, bitmask, stack) {
-	      var isPartial = bitmask & PARTIAL_COMPARE_FLAG,
+	    function equalArrays(array, other, bitmask, customizer, equalFunc, stack) {
+	      var isPartial = bitmask & COMPARE_PARTIAL_FLAG,
 	          arrLength = array.length,
 	          othLength = other.length;
 	
@@ -5558,7 +5723,7 @@
 	      }
 	      var index = -1,
 	          result = true,
-	          seen = (bitmask & UNORDERED_COMPARE_FLAG) ? new SetCache : undefined;
+	          seen = (bitmask & COMPARE_UNORDERED_FLAG) ? new SetCache : undefined;
 	
 	      stack.set(array, other);
 	      stack.set(other, array);
@@ -5584,7 +5749,7 @@
 	        if (seen) {
 	          if (!arraySome(other, function(othValue, othIndex) {
 	                if (!cacheHas(seen, othIndex) &&
-	                    (arrValue === othValue || equalFunc(arrValue, othValue, customizer, bitmask, stack))) {
+	                    (arrValue === othValue || equalFunc(arrValue, othValue, bitmask, customizer, stack))) {
 	                  return seen.push(othIndex);
 	                }
 	              })) {
@@ -5593,7 +5758,7 @@
 	          }
 	        } else if (!(
 	              arrValue === othValue ||
-	                equalFunc(arrValue, othValue, customizer, bitmask, stack)
+	                equalFunc(arrValue, othValue, bitmask, customizer, stack)
 	            )) {
 	          result = false;
 	          break;
@@ -5615,14 +5780,13 @@
 	     * @param {Object} object The object to compare.
 	     * @param {Object} other The other object to compare.
 	     * @param {string} tag The `toStringTag` of the objects to compare.
-	     * @param {Function} equalFunc The function to determine equivalents of values.
+	     * @param {number} bitmask The bitmask flags. See `baseIsEqual` for more details.
 	     * @param {Function} customizer The function to customize comparisons.
-	     * @param {number} bitmask The bitmask of comparison flags. See `baseIsEqual`
-	     *  for more details.
+	     * @param {Function} equalFunc The function to determine equivalents of values.
 	     * @param {Object} stack Tracks traversed `object` and `other` objects.
 	     * @returns {boolean} Returns `true` if the objects are equivalent, else `false`.
 	     */
-	    function equalByTag(object, other, tag, equalFunc, customizer, bitmask, stack) {
+	    function equalByTag(object, other, tag, bitmask, customizer, equalFunc, stack) {
 	      switch (tag) {
 	        case dataViewTag:
 	          if ((object.byteLength != other.byteLength) ||
@@ -5660,7 +5824,7 @@
 	          var convert = mapToArray;
 	
 	        case setTag:
-	          var isPartial = bitmask & PARTIAL_COMPARE_FLAG;
+	          var isPartial = bitmask & COMPARE_PARTIAL_FLAG;
 	          convert || (convert = setToArray);
 	
 	          if (object.size != other.size && !isPartial) {
@@ -5671,11 +5835,11 @@
 	          if (stacked) {
 	            return stacked == other;
 	          }
-	          bitmask |= UNORDERED_COMPARE_FLAG;
+	          bitmask |= COMPARE_UNORDERED_FLAG;
 	
 	          // Recursively compare objects (susceptible to call stack limits).
 	          stack.set(object, other);
-	          var result = equalArrays(convert(object), convert(other), equalFunc, customizer, bitmask, stack);
+	          var result = equalArrays(convert(object), convert(other), bitmask, customizer, equalFunc, stack);
 	          stack['delete'](object);
 	          return result;
 	
@@ -5694,18 +5858,17 @@
 	     * @private
 	     * @param {Object} object The object to compare.
 	     * @param {Object} other The other object to compare.
-	     * @param {Function} equalFunc The function to determine equivalents of values.
+	     * @param {number} bitmask The bitmask flags. See `baseIsEqual` for more details.
 	     * @param {Function} customizer The function to customize comparisons.
-	     * @param {number} bitmask The bitmask of comparison flags. See `baseIsEqual`
-	     *  for more details.
+	     * @param {Function} equalFunc The function to determine equivalents of values.
 	     * @param {Object} stack Tracks traversed `object` and `other` objects.
 	     * @returns {boolean} Returns `true` if the objects are equivalent, else `false`.
 	     */
-	    function equalObjects(object, other, equalFunc, customizer, bitmask, stack) {
-	      var isPartial = bitmask & PARTIAL_COMPARE_FLAG,
-	          objProps = keys(object),
+	    function equalObjects(object, other, bitmask, customizer, equalFunc, stack) {
+	      var isPartial = bitmask & COMPARE_PARTIAL_FLAG,
+	          objProps = getAllKeys(object),
 	          objLength = objProps.length,
-	          othProps = keys(other),
+	          othProps = getAllKeys(other),
 	          othLength = othProps.length;
 	
 	      if (objLength != othLength && !isPartial) {
@@ -5740,7 +5903,7 @@
 	        }
 	        // Recursively compare objects (susceptible to call stack limits).
 	        if (!(compared === undefined
-	              ? (objValue === othValue || equalFunc(objValue, othValue, customizer, bitmask, stack))
+	              ? (objValue === othValue || equalFunc(objValue, othValue, bitmask, customizer, stack))
 	              : compared
 	            )) {
 	          result = false;
@@ -5910,17 +6073,51 @@
 	    }
 	
 	    /**
-	     * Creates an array of the own enumerable symbol properties of `object`.
+	     * A specialized version of `baseGetTag` which ignores `Symbol.toStringTag` values.
+	     *
+	     * @private
+	     * @param {*} value The value to query.
+	     * @returns {string} Returns the raw `toStringTag`.
+	     */
+	    function getRawTag(value) {
+	      var isOwn = hasOwnProperty.call(value, symToStringTag),
+	          tag = value[symToStringTag];
+	
+	      try {
+	        value[symToStringTag] = undefined;
+	        var unmasked = true;
+	      } catch (e) {}
+	
+	      var result = nativeObjectToString.call(value);
+	      if (unmasked) {
+	        if (isOwn) {
+	          value[symToStringTag] = tag;
+	        } else {
+	          delete value[symToStringTag];
+	        }
+	      }
+	      return result;
+	    }
+	
+	    /**
+	     * Creates an array of the own enumerable symbols of `object`.
 	     *
 	     * @private
 	     * @param {Object} object The object to query.
 	     * @returns {Array} Returns the array of symbols.
 	     */
-	    var getSymbols = nativeGetSymbols ? overArg(nativeGetSymbols, Object) : stubArray;
+	    var getSymbols = !nativeGetSymbols ? stubArray : function(object) {
+	      if (object == null) {
+	        return [];
+	      }
+	      object = Object(object);
+	      return arrayFilter(nativeGetSymbols(object), function(symbol) {
+	        return propertyIsEnumerable.call(object, symbol);
+	      });
+	    };
 	
 	    /**
-	     * Creates an array of the own and inherited enumerable symbol properties
-	     * of `object`.
+	     * Creates an array of the own and inherited enumerable symbols of `object`.
 	     *
 	     * @private
 	     * @param {Object} object The object to query.
@@ -5951,9 +6148,9 @@
 	        (Set && getTag(new Set) != setTag) ||
 	        (WeakMap && getTag(new WeakMap) != weakMapTag)) {
 	      getTag = function(value) {
-	        var result = objectToString.call(value),
+	        var result = baseGetTag(value),
 	            Ctor = result == objectTag ? value.constructor : undefined,
-	            ctorString = Ctor ? toSource(Ctor) : undefined;
+	            ctorString = Ctor ? toSource(Ctor) : '';
 	
 	        if (ctorString) {
 	          switch (ctorString) {
@@ -6018,7 +6215,7 @@
 	     * @returns {boolean} Returns `true` if `path` exists, else `false`.
 	     */
 	    function hasPath(object, path, hasFunc) {
-	      path = isKey(path, object) ? [path] : castPath(path);
+	      path = castPath(path, object);
 	
 	      var index = -1,
 	          length = path.length,
@@ -6034,7 +6231,7 @@
 	      if (result || ++index != length) {
 	        return result;
 	      }
-	      length = object ? object.length : 0;
+	      length = object == null ? 0 : object.length;
 	      return !!length && isLength(length) && isIndex(key, length) &&
 	        (isArray(object) || isArguments(object));
 	    }
@@ -6352,22 +6549,22 @@
 	      var bitmask = data[1],
 	          srcBitmask = source[1],
 	          newBitmask = bitmask | srcBitmask,
-	          isCommon = newBitmask < (BIND_FLAG | BIND_KEY_FLAG | ARY_FLAG);
+	          isCommon = newBitmask < (WRAP_BIND_FLAG | WRAP_BIND_KEY_FLAG | WRAP_ARY_FLAG);
 	
 	      var isCombo =
-	        ((srcBitmask == ARY_FLAG) && (bitmask == CURRY_FLAG)) ||
-	        ((srcBitmask == ARY_FLAG) && (bitmask == REARG_FLAG) && (data[7].length <= source[8])) ||
-	        ((srcBitmask == (ARY_FLAG | REARG_FLAG)) && (source[7].length <= source[8]) && (bitmask == CURRY_FLAG));
+	        ((srcBitmask == WRAP_ARY_FLAG) && (bitmask == WRAP_CURRY_FLAG)) ||
+	        ((srcBitmask == WRAP_ARY_FLAG) && (bitmask == WRAP_REARG_FLAG) && (data[7].length <= source[8])) ||
+	        ((srcBitmask == (WRAP_ARY_FLAG | WRAP_REARG_FLAG)) && (source[7].length <= source[8]) && (bitmask == WRAP_CURRY_FLAG));
 	
 	      // Exit early if metadata can't be merged.
 	      if (!(isCommon || isCombo)) {
 	        return data;
 	      }
 	      // Use source `thisArg` if available.
-	      if (srcBitmask & BIND_FLAG) {
+	      if (srcBitmask & WRAP_BIND_FLAG) {
 	        data[2] = source[2];
 	        // Set when currying a bound function.
-	        newBitmask |= bitmask & BIND_FLAG ? 0 : CURRY_BOUND_FLAG;
+	        newBitmask |= bitmask & WRAP_BIND_FLAG ? 0 : WRAP_CURRY_BOUND_FLAG;
 	      }
 	      // Compose partial arguments.
 	      var value = source[3];
@@ -6389,7 +6586,7 @@
 	        data[7] = value;
 	      }
 	      // Use source `ary` if it's smaller.
-	      if (srcBitmask & ARY_FLAG) {
+	      if (srcBitmask & WRAP_ARY_FLAG) {
 	        data[8] = data[8] == null ? source[8] : nativeMin(data[8], source[8]);
 	      }
 	      // Use source `arity` if one is not provided.
@@ -6401,29 +6598,6 @@
 	      data[1] = newBitmask;
 	
 	      return data;
-	    }
-	
-	    /**
-	     * Used by `_.defaultsDeep` to customize its `_.merge` use.
-	     *
-	     * @private
-	     * @param {*} objValue The destination value.
-	     * @param {*} srcValue The source value.
-	     * @param {string} key The key of the property to merge.
-	     * @param {Object} object The parent object of `objValue`.
-	     * @param {Object} source The parent object of `srcValue`.
-	     * @param {Object} [stack] Tracks traversed source values and their merged
-	     *  counterparts.
-	     * @returns {*} Returns the value to assign.
-	     */
-	    function mergeDefaults(objValue, srcValue, key, object, source, stack) {
-	      if (isObject(objValue) && isObject(srcValue)) {
-	        // Recursively merge objects and arrays (susceptible to call stack limits).
-	        stack.set(srcValue, objValue);
-	        baseMerge(objValue, srcValue, undefined, mergeDefaults, stack);
-	        stack['delete'](srcValue);
-	      }
-	      return objValue;
 	    }
 	
 	    /**
@@ -6443,6 +6617,17 @@
 	        }
 	      }
 	      return result;
+	    }
+	
+	    /**
+	     * Converts `value` to a string using `Object.prototype.toString`.
+	     *
+	     * @private
+	     * @param {*} value The value to convert.
+	     * @returns {string} Returns the converted string.
+	     */
+	    function objectToString(value) {
+	      return nativeObjectToString.call(value);
 	    }
 	
 	    /**
@@ -6484,7 +6669,7 @@
 	     * @returns {*} Returns the parent value.
 	     */
 	    function parent(object, path) {
-	      return path.length == 1 ? object : baseGet(object, baseSlice(path, 0, -1));
+	      return path.length < 2 ? object : baseGet(object, baseSlice(path, 0, -1));
 	    }
 	
 	    /**
@@ -6592,24 +6777,27 @@
 	    }
 	
 	    /**
-	     * A specialized version of `arrayShuffle` which mutates `array`.
+	     * A specialized version of `_.shuffle` which mutates and sets the size of `array`.
 	     *
 	     * @private
 	     * @param {Array} array The array to shuffle.
+	     * @param {number} [size=array.length] The size of `array`.
 	     * @returns {Array} Returns `array`.
 	     */
-	    function shuffleSelf(array) {
+	    function shuffleSelf(array, size) {
 	      var index = -1,
 	          length = array.length,
 	          lastIndex = length - 1;
 	
-	      while (++index < length) {
+	      size = size === undefined ? length : size;
+	      while (++index < size) {
 	        var rand = baseRandom(index, lastIndex),
 	            value = array[rand];
 	
 	        array[rand] = array[index];
 	        array[index] = value;
 	      }
+	      array.length = size;
 	      return array;
 	    }
 	
@@ -6621,8 +6809,6 @@
 	     * @returns {Array} Returns the property path array.
 	     */
 	    var stringToPath = memoizeCapped(function(string) {
-	      string = toString(string);
-	
 	      var result = [];
 	      if (reLeadingDot.test(string)) {
 	        result.push('');
@@ -6652,7 +6838,7 @@
 	     * Converts `func` to its source code.
 	     *
 	     * @private
-	     * @param {Function} func The function to process.
+	     * @param {Function} func The function to convert.
 	     * @returns {string} Returns the source code.
 	     */
 	    function toSource(func) {
@@ -6732,7 +6918,7 @@
 	      } else {
 	        size = nativeMax(toInteger(size), 0);
 	      }
-	      var length = array ? array.length : 0;
+	      var length = array == null ? 0 : array.length;
 	      if (!length || size < 1) {
 	        return [];
 	      }
@@ -6763,7 +6949,7 @@
 	     */
 	    function compact(array) {
 	      var index = -1,
-	          length = array ? array.length : 0,
+	          length = array == null ? 0 : array.length,
 	          resIndex = 0,
 	          result = [];
 	
@@ -6935,7 +7121,7 @@
 	     * // => [1, 2, 3]
 	     */
 	    function drop(array, n, guard) {
-	      var length = array ? array.length : 0;
+	      var length = array == null ? 0 : array.length;
 	      if (!length) {
 	        return [];
 	      }
@@ -6969,7 +7155,7 @@
 	     * // => [1, 2, 3]
 	     */
 	    function dropRight(array, n, guard) {
-	      var length = array ? array.length : 0;
+	      var length = array == null ? 0 : array.length;
 	      if (!length) {
 	        return [];
 	      }
@@ -7029,8 +7215,7 @@
 	     * @since 3.0.0
 	     * @category Array
 	     * @param {Array} array The array to query.
-	     * @param {Function} [predicate=_.identity]
-	     *  The function invoked per iteration.
+	     * @param {Function} [predicate=_.identity] The function invoked per iteration.
 	     * @returns {Array} Returns the slice of `array`.
 	     * @example
 	     *
@@ -7091,7 +7276,7 @@
 	     * // => [4, '*', '*', 10]
 	     */
 	    function fill(array, value, start, end) {
-	      var length = array ? array.length : 0;
+	      var length = array == null ? 0 : array.length;
 	      if (!length) {
 	        return [];
 	      }
@@ -7111,8 +7296,7 @@
 	     * @since 1.1.0
 	     * @category Array
 	     * @param {Array} array The array to inspect.
-	     * @param {Function} [predicate=_.identity]
-	     *  The function invoked per iteration.
+	     * @param {Function} [predicate=_.identity] The function invoked per iteration.
 	     * @param {number} [fromIndex=0] The index to search from.
 	     * @returns {number} Returns the index of the found element, else `-1`.
 	     * @example
@@ -7139,7 +7323,7 @@
 	     * // => 2
 	     */
 	    function findIndex(array, predicate, fromIndex) {
-	      var length = array ? array.length : 0;
+	      var length = array == null ? 0 : array.length;
 	      if (!length) {
 	        return -1;
 	      }
@@ -7159,8 +7343,7 @@
 	     * @since 2.0.0
 	     * @category Array
 	     * @param {Array} array The array to inspect.
-	     * @param {Function} [predicate=_.identity]
-	     *  The function invoked per iteration.
+	     * @param {Function} [predicate=_.identity] The function invoked per iteration.
 	     * @param {number} [fromIndex=array.length-1] The index to search from.
 	     * @returns {number} Returns the index of the found element, else `-1`.
 	     * @example
@@ -7187,7 +7370,7 @@
 	     * // => 0
 	     */
 	    function findLastIndex(array, predicate, fromIndex) {
-	      var length = array ? array.length : 0;
+	      var length = array == null ? 0 : array.length;
 	      if (!length) {
 	        return -1;
 	      }
@@ -7216,7 +7399,7 @@
 	     * // => [1, 2, [3, [4]], 5]
 	     */
 	    function flatten(array) {
-	      var length = array ? array.length : 0;
+	      var length = array == null ? 0 : array.length;
 	      return length ? baseFlatten(array, 1) : [];
 	    }
 	
@@ -7235,7 +7418,7 @@
 	     * // => [1, 2, 3, 4, 5]
 	     */
 	    function flattenDeep(array) {
-	      var length = array ? array.length : 0;
+	      var length = array == null ? 0 : array.length;
 	      return length ? baseFlatten(array, INFINITY) : [];
 	    }
 	
@@ -7260,7 +7443,7 @@
 	     * // => [1, 2, 3, [4], 5]
 	     */
 	    function flattenDepth(array, depth) {
-	      var length = array ? array.length : 0;
+	      var length = array == null ? 0 : array.length;
 	      if (!length) {
 	        return [];
 	      }
@@ -7285,7 +7468,7 @@
 	     */
 	    function fromPairs(pairs) {
 	      var index = -1,
-	          length = pairs ? pairs.length : 0,
+	          length = pairs == null ? 0 : pairs.length,
 	          result = {};
 	
 	      while (++index < length) {
@@ -7341,7 +7524,7 @@
 	     * // => 3
 	     */
 	    function indexOf(array, value, fromIndex) {
-	      var length = array ? array.length : 0;
+	      var length = array == null ? 0 : array.length;
 	      if (!length) {
 	        return -1;
 	      }
@@ -7367,7 +7550,7 @@
 	     * // => [1, 2]
 	     */
 	    function initial(array) {
-	      var length = array ? array.length : 0;
+	      var length = array == null ? 0 : array.length;
 	      return length ? baseSlice(array, 0, -1) : [];
 	    }
 	
@@ -7457,9 +7640,8 @@
 	      var comparator = last(arrays),
 	          mapped = arrayMap(arrays, castArrayLikeObject);
 	
-	      if (comparator === last(mapped)) {
-	        comparator = undefined;
-	      } else {
+	      comparator = typeof comparator == 'function' ? comparator : undefined;
+	      if (comparator) {
 	        mapped.pop();
 	      }
 	      return (mapped.length && mapped[0] === arrays[0])
@@ -7483,7 +7665,7 @@
 	     * // => 'a~b~c'
 	     */
 	    function join(array, separator) {
-	      return array ? nativeJoin.call(array, separator) : '';
+	      return array == null ? '' : nativeJoin.call(array, separator);
 	    }
 	
 	    /**
@@ -7501,7 +7683,7 @@
 	     * // => 3
 	     */
 	    function last(array) {
-	      var length = array ? array.length : 0;
+	      var length = array == null ? 0 : array.length;
 	      return length ? array[length - 1] : undefined;
 	    }
 	
@@ -7527,7 +7709,7 @@
 	     * // => 1
 	     */
 	    function lastIndexOf(array, value, fromIndex) {
-	      var length = array ? array.length : 0;
+	      var length = array == null ? 0 : array.length;
 	      if (!length) {
 	        return -1;
 	      }
@@ -7630,8 +7812,7 @@
 	     * @category Array
 	     * @param {Array} array The array to modify.
 	     * @param {Array} values The values to remove.
-	     * @param {Function} [iteratee=_.identity]
-	     *  The iteratee invoked per element.
+	     * @param {Function} [iteratee=_.identity] The iteratee invoked per element.
 	     * @returns {Array} Returns `array`.
 	     * @example
 	     *
@@ -7701,7 +7882,7 @@
 	     * // => ['b', 'd']
 	     */
 	    var pullAt = flatRest(function(array, indexes) {
-	      var length = array ? array.length : 0,
+	      var length = array == null ? 0 : array.length,
 	          result = baseAt(array, indexes);
 	
 	      basePullAt(array, arrayMap(indexes, function(index) {
@@ -7724,8 +7905,7 @@
 	     * @since 2.0.0
 	     * @category Array
 	     * @param {Array} array The array to modify.
-	     * @param {Function} [predicate=_.identity]
-	     *  The function invoked per iteration.
+	     * @param {Function} [predicate=_.identity] The function invoked per iteration.
 	     * @returns {Array} Returns the new array of removed elements.
 	     * @example
 	     *
@@ -7785,7 +7965,7 @@
 	     * // => [3, 2, 1]
 	     */
 	    function reverse(array) {
-	      return array ? nativeReverse.call(array) : array;
+	      return array == null ? array : nativeReverse.call(array);
 	    }
 	
 	    /**
@@ -7805,7 +7985,7 @@
 	     * @returns {Array} Returns the slice of `array`.
 	     */
 	    function slice(array, start, end) {
-	      var length = array ? array.length : 0;
+	      var length = array == null ? 0 : array.length;
 	      if (!length) {
 	        return [];
 	      }
@@ -7852,8 +8032,7 @@
 	     * @category Array
 	     * @param {Array} array The sorted array to inspect.
 	     * @param {*} value The value to evaluate.
-	     * @param {Function} [iteratee=_.identity]
-	     *  The iteratee invoked per element.
+	     * @param {Function} [iteratee=_.identity] The iteratee invoked per element.
 	     * @returns {number} Returns the index at which `value` should be inserted
 	     *  into `array`.
 	     * @example
@@ -7888,7 +8067,7 @@
 	     * // => 1
 	     */
 	    function sortedIndexOf(array, value) {
-	      var length = array ? array.length : 0;
+	      var length = array == null ? 0 : array.length;
 	      if (length) {
 	        var index = baseSortedIndex(array, value);
 	        if (index < length && eq(array[index], value)) {
@@ -7931,8 +8110,7 @@
 	     * @category Array
 	     * @param {Array} array The sorted array to inspect.
 	     * @param {*} value The value to evaluate.
-	     * @param {Function} [iteratee=_.identity]
-	     *  The iteratee invoked per element.
+	     * @param {Function} [iteratee=_.identity] The iteratee invoked per element.
 	     * @returns {number} Returns the index at which `value` should be inserted
 	     *  into `array`.
 	     * @example
@@ -7967,7 +8145,7 @@
 	     * // => 3
 	     */
 	    function sortedLastIndexOf(array, value) {
-	      var length = array ? array.length : 0;
+	      var length = array == null ? 0 : array.length;
 	      if (length) {
 	        var index = baseSortedIndex(array, value, true) - 1;
 	        if (eq(array[index], value)) {
@@ -8035,7 +8213,7 @@
 	     * // => [2, 3]
 	     */
 	    function tail(array) {
-	      var length = array ? array.length : 0;
+	      var length = array == null ? 0 : array.length;
 	      return length ? baseSlice(array, 1, length) : [];
 	    }
 	
@@ -8098,7 +8276,7 @@
 	     * // => []
 	     */
 	    function takeRight(array, n, guard) {
-	      var length = array ? array.length : 0;
+	      var length = array == null ? 0 : array.length;
 	      if (!length) {
 	        return [];
 	      }
@@ -8117,8 +8295,7 @@
 	     * @since 3.0.0
 	     * @category Array
 	     * @param {Array} array The array to query.
-	     * @param {Function} [predicate=_.identity]
-	     *  The function invoked per iteration.
+	     * @param {Function} [predicate=_.identity] The function invoked per iteration.
 	     * @returns {Array} Returns the slice of `array`.
 	     * @example
 	     *
@@ -8159,14 +8336,13 @@
 	     * @since 3.0.0
 	     * @category Array
 	     * @param {Array} array The array to query.
-	     * @param {Function} [predicate=_.identity]
-	     *  The function invoked per iteration.
+	     * @param {Function} [predicate=_.identity] The function invoked per iteration.
 	     * @returns {Array} Returns the slice of `array`.
 	     * @example
 	     *
 	     * var users = [
 	     *   { 'user': 'barney',  'active': false },
-	     *   { 'user': 'fred',    'active': false},
+	     *   { 'user': 'fred',    'active': false },
 	     *   { 'user': 'pebbles', 'active': true }
 	     * ];
 	     *
@@ -8223,8 +8399,7 @@
 	     * @since 4.0.0
 	     * @category Array
 	     * @param {...Array} [arrays] The arrays to inspect.
-	     * @param {Function} [iteratee=_.identity]
-	     *  The iteratee invoked per element.
+	     * @param {Function} [iteratee=_.identity] The iteratee invoked per element.
 	     * @returns {Array} Returns the new array of combined values.
 	     * @example
 	     *
@@ -8266,9 +8441,7 @@
 	     */
 	    var unionWith = baseRest(function(arrays) {
 	      var comparator = last(arrays);
-	      if (isArrayLikeObject(comparator)) {
-	        comparator = undefined;
-	      }
+	      comparator = typeof comparator == 'function' ? comparator : undefined;
 	      return baseUniq(baseFlatten(arrays, 1, isArrayLikeObject, true), undefined, comparator);
 	    });
 	
@@ -8291,9 +8464,7 @@
 	     * // => [2, 1]
 	     */
 	    function uniq(array) {
-	      return (array && array.length)
-	        ? baseUniq(array)
-	        : [];
+	      return (array && array.length) ? baseUniq(array) : [];
 	    }
 	
 	    /**
@@ -8308,8 +8479,7 @@
 	     * @since 4.0.0
 	     * @category Array
 	     * @param {Array} array The array to inspect.
-	     * @param {Function} [iteratee=_.identity]
-	     *  The iteratee invoked per element.
+	     * @param {Function} [iteratee=_.identity] The iteratee invoked per element.
 	     * @returns {Array} Returns the new duplicate free array.
 	     * @example
 	     *
@@ -8321,9 +8491,7 @@
 	     * // => [{ 'x': 1 }, { 'x': 2 }]
 	     */
 	    function uniqBy(array, iteratee) {
-	      return (array && array.length)
-	        ? baseUniq(array, getIteratee(iteratee, 2))
-	        : [];
+	      return (array && array.length) ? baseUniq(array, getIteratee(iteratee, 2)) : [];
 	    }
 	
 	    /**
@@ -8347,9 +8515,8 @@
 	     * // => [{ 'x': 1, 'y': 2 }, { 'x': 2, 'y': 1 }]
 	     */
 	    function uniqWith(array, comparator) {
-	      return (array && array.length)
-	        ? baseUniq(array, undefined, comparator)
-	        : [];
+	      comparator = typeof comparator == 'function' ? comparator : undefined;
+	      return (array && array.length) ? baseUniq(array, undefined, comparator) : [];
 	    }
 	
 	    /**
@@ -8481,8 +8648,7 @@
 	     * @since 4.0.0
 	     * @category Array
 	     * @param {...Array} [arrays] The arrays to inspect.
-	     * @param {Function} [iteratee=_.identity]
-	     *  The iteratee invoked per element.
+	     * @param {Function} [iteratee=_.identity] The iteratee invoked per element.
 	     * @returns {Array} Returns the new array of filtered values.
 	     * @example
 	     *
@@ -8524,9 +8690,7 @@
 	     */
 	    var xorWith = baseRest(function(arrays) {
 	      var comparator = last(arrays);
-	      if (isArrayLikeObject(comparator)) {
-	        comparator = undefined;
-	      }
+	      comparator = typeof comparator == 'function' ? comparator : undefined;
 	      return baseXor(arrayFilter(arrays, isArrayLikeObject), undefined, comparator);
 	    });
 	
@@ -8597,7 +8761,8 @@
 	     * @since 3.8.0
 	     * @category Array
 	     * @param {...Array} [arrays] The arrays to process.
-	     * @param {Function} [iteratee=_.identity] The function to combine grouped values.
+	     * @param {Function} [iteratee=_.identity] The function to combine
+	     *  grouped values.
 	     * @returns {Array} Returns the new array of grouped elements.
 	     * @example
 	     *
@@ -8713,7 +8878,7 @@
 	     * @memberOf _
 	     * @since 1.0.0
 	     * @category Seq
-	     * @param {...(string|string[])} [paths] The property paths of elements to pick.
+	     * @param {...(string|string[])} [paths] The property paths to pick.
 	     * @returns {Object} Returns the new `lodash` wrapper instance.
 	     * @example
 	     *
@@ -8974,8 +9139,7 @@
 	     * @since 0.5.0
 	     * @category Collection
 	     * @param {Array|Object} collection The collection to iterate over.
-	     * @param {Function} [iteratee=_.identity]
-	     *  The iteratee to transform keys.
+	     * @param {Function} [iteratee=_.identity] The iteratee to transform keys.
 	     * @returns {Object} Returns the composed aggregate object.
 	     * @example
 	     *
@@ -9009,8 +9173,7 @@
 	     * @since 0.1.0
 	     * @category Collection
 	     * @param {Array|Object} collection The collection to iterate over.
-	     * @param {Function} [predicate=_.identity]
-	     *  The function invoked per iteration.
+	     * @param {Function} [predicate=_.identity] The function invoked per iteration.
 	     * @param- {Object} [guard] Enables use as an iteratee for methods like `_.map`.
 	     * @returns {boolean} Returns `true` if all elements pass the predicate check,
 	     *  else `false`.
@@ -9056,8 +9219,7 @@
 	     * @since 0.1.0
 	     * @category Collection
 	     * @param {Array|Object} collection The collection to iterate over.
-	     * @param {Function} [predicate=_.identity]
-	     *  The function invoked per iteration.
+	     * @param {Function} [predicate=_.identity] The function invoked per iteration.
 	     * @returns {Array} Returns the new filtered array.
 	     * @see _.reject
 	     * @example
@@ -9097,8 +9259,7 @@
 	     * @since 0.1.0
 	     * @category Collection
 	     * @param {Array|Object} collection The collection to inspect.
-	     * @param {Function} [predicate=_.identity]
-	     *  The function invoked per iteration.
+	     * @param {Function} [predicate=_.identity] The function invoked per iteration.
 	     * @param {number} [fromIndex=0] The index to search from.
 	     * @returns {*} Returns the matched element, else `undefined`.
 	     * @example
@@ -9135,8 +9296,7 @@
 	     * @since 2.0.0
 	     * @category Collection
 	     * @param {Array|Object} collection The collection to inspect.
-	     * @param {Function} [predicate=_.identity]
-	     *  The function invoked per iteration.
+	     * @param {Function} [predicate=_.identity] The function invoked per iteration.
 	     * @param {number} [fromIndex=collection.length-1] The index to search from.
 	     * @returns {*} Returns the matched element, else `undefined`.
 	     * @example
@@ -9158,8 +9318,7 @@
 	     * @since 4.0.0
 	     * @category Collection
 	     * @param {Array|Object} collection The collection to iterate over.
-	     * @param {Function} [iteratee=_.identity]
-	     *  The function invoked per iteration.
+	     * @param {Function} [iteratee=_.identity] The function invoked per iteration.
 	     * @returns {Array} Returns the new flattened array.
 	     * @example
 	     *
@@ -9183,8 +9342,7 @@
 	     * @since 4.7.0
 	     * @category Collection
 	     * @param {Array|Object} collection The collection to iterate over.
-	     * @param {Function} [iteratee=_.identity]
-	     *  The function invoked per iteration.
+	     * @param {Function} [iteratee=_.identity] The function invoked per iteration.
 	     * @returns {Array} Returns the new flattened array.
 	     * @example
 	     *
@@ -9208,8 +9366,7 @@
 	     * @since 4.7.0
 	     * @category Collection
 	     * @param {Array|Object} collection The collection to iterate over.
-	     * @param {Function} [iteratee=_.identity]
-	     *  The function invoked per iteration.
+	     * @param {Function} [iteratee=_.identity] The function invoked per iteration.
 	     * @param {number} [depth=1] The maximum recursion depth.
 	     * @returns {Array} Returns the new flattened array.
 	     * @example
@@ -9298,8 +9455,7 @@
 	     * @since 0.1.0
 	     * @category Collection
 	     * @param {Array|Object} collection The collection to iterate over.
-	     * @param {Function} [iteratee=_.identity]
-	     *  The iteratee to transform keys.
+	     * @param {Function} [iteratee=_.identity] The iteratee to transform keys.
 	     * @returns {Object} Returns the composed aggregate object.
 	     * @example
 	     *
@@ -9387,12 +9543,10 @@
 	    var invokeMap = baseRest(function(collection, path, args) {
 	      var index = -1,
 	          isFunc = typeof path == 'function',
-	          isProp = isKey(path),
 	          result = isArrayLike(collection) ? Array(collection.length) : [];
 	
 	      baseEach(collection, function(value) {
-	        var func = isFunc ? path : ((isProp && value != null) ? value[path] : undefined);
-	        result[++index] = func ? apply(func, value, args) : baseInvoke(value, path, args);
+	        result[++index] = isFunc ? apply(path, value, args) : baseInvoke(value, path, args);
 	      });
 	      return result;
 	    });
@@ -9408,8 +9562,7 @@
 	     * @since 4.0.0
 	     * @category Collection
 	     * @param {Array|Object} collection The collection to iterate over.
-	     * @param {Function} [iteratee=_.identity]
-	     *  The iteratee to transform keys.
+	     * @param {Function} [iteratee=_.identity] The iteratee to transform keys.
 	     * @returns {Object} Returns the composed aggregate object.
 	     * @example
 	     *
@@ -9687,7 +9840,8 @@
 	     * // => 2
 	     */
 	    function sample(collection) {
-	      return arraySample(isArrayLike(collection) ? collection : values(collection));
+	      var func = isArray(collection) ? arraySample : baseSample;
+	      return func(collection);
 	    }
 	
 	    /**
@@ -9716,7 +9870,8 @@
 	      } else {
 	        n = toInteger(n);
 	      }
-	      return arraySampleSize(isArrayLike(collection) ? collection : values(collection), n);
+	      var func = isArray(collection) ? arraySampleSize : baseSampleSize;
+	      return func(collection, n);
 	    }
 	
 	    /**
@@ -9735,10 +9890,8 @@
 	     * // => [4, 1, 3, 2]
 	     */
 	    function shuffle(collection) {
-	      return shuffleSelf(isArrayLike(collection)
-	        ? copyArray(collection)
-	        : values(collection)
-	      );
+	      var func = isArray(collection) ? arrayShuffle : baseShuffle;
+	      return func(collection);
 	    }
 	
 	    /**
@@ -9942,7 +10095,7 @@
 	    function ary(func, n, guard) {
 	      n = guard ? undefined : n;
 	      n = (func && n == null) ? func.length : n;
-	      return createWrap(func, ARY_FLAG, undefined, undefined, undefined, undefined, n);
+	      return createWrap(func, WRAP_ARY_FLAG, undefined, undefined, undefined, undefined, n);
 	    }
 	
 	    /**
@@ -10015,10 +10168,10 @@
 	     * // => 'hi fred!'
 	     */
 	    var bind = baseRest(function(func, thisArg, partials) {
-	      var bitmask = BIND_FLAG;
+	      var bitmask = WRAP_BIND_FLAG;
 	      if (partials.length) {
 	        var holders = replaceHolders(partials, getHolder(bind));
-	        bitmask |= PARTIAL_FLAG;
+	        bitmask |= WRAP_PARTIAL_FLAG;
 	      }
 	      return createWrap(func, bitmask, thisArg, partials, holders);
 	    });
@@ -10069,10 +10222,10 @@
 	     * // => 'hiya fred!'
 	     */
 	    var bindKey = baseRest(function(object, key, partials) {
-	      var bitmask = BIND_FLAG | BIND_KEY_FLAG;
+	      var bitmask = WRAP_BIND_FLAG | WRAP_BIND_KEY_FLAG;
 	      if (partials.length) {
 	        var holders = replaceHolders(partials, getHolder(bindKey));
-	        bitmask |= PARTIAL_FLAG;
+	        bitmask |= WRAP_PARTIAL_FLAG;
 	      }
 	      return createWrap(key, bitmask, object, partials, holders);
 	    });
@@ -10120,7 +10273,7 @@
 	     */
 	    function curry(func, arity, guard) {
 	      arity = guard ? undefined : arity;
-	      var result = createWrap(func, CURRY_FLAG, undefined, undefined, undefined, undefined, undefined, arity);
+	      var result = createWrap(func, WRAP_CURRY_FLAG, undefined, undefined, undefined, undefined, undefined, arity);
 	      result.placeholder = curry.placeholder;
 	      return result;
 	    }
@@ -10165,7 +10318,7 @@
 	     */
 	    function curryRight(func, arity, guard) {
 	      arity = guard ? undefined : arity;
-	      var result = createWrap(func, CURRY_RIGHT_FLAG, undefined, undefined, undefined, undefined, undefined, arity);
+	      var result = createWrap(func, WRAP_CURRY_RIGHT_FLAG, undefined, undefined, undefined, undefined, undefined, arity);
 	      result.placeholder = curryRight.placeholder;
 	      return result;
 	    }
@@ -10410,7 +10563,7 @@
 	     * // => ['d', 'c', 'b', 'a']
 	     */
 	    function flip(func) {
-	      return createWrap(func, FLIP_FLAG);
+	      return createWrap(func, WRAP_FLIP_FLAG);
 	    }
 	
 	    /**
@@ -10424,7 +10577,7 @@
 	     * function. Its creation may be customized by replacing the `_.memoize.Cache`
 	     * constructor with one whose instances implement the
 	     * [`Map`](http://ecma-international.org/ecma-262/7.0/#sec-properties-of-the-map-prototype-object)
-	     * method interface of `delete`, `get`, `has`, and `set`.
+	     * method interface of `clear`, `delete`, `get`, `has`, and `set`.
 	     *
 	     * @static
 	     * @memberOf _
@@ -10458,7 +10611,7 @@
 	     * _.memoize.Cache = WeakMap;
 	     */
 	    function memoize(func, resolver) {
-	      if (typeof func != 'function' || (resolver && typeof resolver != 'function')) {
+	      if (typeof func != 'function' || (resolver != null && typeof resolver != 'function')) {
 	        throw new TypeError(FUNC_ERROR_TEXT);
 	      }
 	      var memoized = function() {
@@ -10621,7 +10774,7 @@
 	     */
 	    var partial = baseRest(function(func, partials) {
 	      var holders = replaceHolders(partials, getHolder(partial));
-	      return createWrap(func, PARTIAL_FLAG, undefined, partials, holders);
+	      return createWrap(func, WRAP_PARTIAL_FLAG, undefined, partials, holders);
 	    });
 	
 	    /**
@@ -10658,7 +10811,7 @@
 	     */
 	    var partialRight = baseRest(function(func, partials) {
 	      var holders = replaceHolders(partials, getHolder(partialRight));
-	      return createWrap(func, PARTIAL_RIGHT_FLAG, undefined, partials, holders);
+	      return createWrap(func, WRAP_PARTIAL_RIGHT_FLAG, undefined, partials, holders);
 	    });
 	
 	    /**
@@ -10684,7 +10837,7 @@
 	     * // => ['a', 'b', 'c']
 	     */
 	    var rearg = flatRest(function(func, indexes) {
-	      return createWrap(func, REARG_FLAG, undefined, undefined, undefined, indexes);
+	      return createWrap(func, WRAP_REARG_FLAG, undefined, undefined, undefined, indexes);
 	    });
 	
 	    /**
@@ -10758,7 +10911,7 @@
 	      if (typeof func != 'function') {
 	        throw new TypeError(FUNC_ERROR_TEXT);
 	      }
-	      start = start === undefined ? 0 : nativeMax(toInteger(start), 0);
+	      start = start == null ? 0 : nativeMax(toInteger(start), 0);
 	      return baseRest(function(args) {
 	        var array = args[start],
 	            otherArgs = castSlice(args, 0, start);
@@ -10874,8 +11027,7 @@
 	     * // => '<p>fred, barney, &amp; pebbles</p>'
 	     */
 	    function wrap(value, wrapper) {
-	      wrapper = wrapper == null ? identity : wrapper;
-	      return partial(wrapper, value);
+	      return partial(castFunction(wrapper), value);
 	    }
 	
 	    /*------------------------------------------------------------------------*/
@@ -10948,7 +11100,7 @@
 	     * // => true
 	     */
 	    function clone(value) {
-	      return baseClone(value, false, true);
+	      return baseClone(value, CLONE_SYMBOLS_FLAG);
 	    }
 	
 	    /**
@@ -10983,7 +11135,8 @@
 	     * // => 0
 	     */
 	    function cloneWith(value, customizer) {
-	      return baseClone(value, false, true, customizer);
+	      customizer = typeof customizer == 'function' ? customizer : undefined;
+	      return baseClone(value, CLONE_SYMBOLS_FLAG, customizer);
 	    }
 	
 	    /**
@@ -11005,7 +11158,7 @@
 	     * // => false
 	     */
 	    function cloneDeep(value) {
-	      return baseClone(value, true, true);
+	      return baseClone(value, CLONE_DEEP_FLAG | CLONE_SYMBOLS_FLAG);
 	    }
 	
 	    /**
@@ -11037,7 +11190,8 @@
 	     * // => 20
 	     */
 	    function cloneDeepWith(value, customizer) {
-	      return baseClone(value, true, true, customizer);
+	      customizer = typeof customizer == 'function' ? customizer : undefined;
+	      return baseClone(value, CLONE_DEEP_FLAG | CLONE_SYMBOLS_FLAG, customizer);
 	    }
 	
 	    /**
@@ -11174,11 +11328,10 @@
 	     * _.isArguments([1, 2, 3]);
 	     * // => false
 	     */
-	    function isArguments(value) {
-	      // Safari 8.1 makes `arguments.callee` enumerable in strict mode.
-	      return isArrayLikeObject(value) && hasOwnProperty.call(value, 'callee') &&
-	        (!propertyIsEnumerable.call(value, 'callee') || objectToString.call(value) == argsTag);
-	    }
+	    var isArguments = baseIsArguments(function() { return arguments; }()) ? baseIsArguments : function(value) {
+	      return isObjectLike(value) && hasOwnProperty.call(value, 'callee') &&
+	        !propertyIsEnumerable.call(value, 'callee');
+	    };
 	
 	    /**
 	     * Checks if `value` is classified as an `Array` object.
@@ -11301,7 +11454,7 @@
 	     */
 	    function isBoolean(value) {
 	      return value === true || value === false ||
-	        (isObjectLike(value) && objectToString.call(value) == boolTag);
+	        (isObjectLike(value) && baseGetTag(value) == boolTag);
 	    }
 	
 	    /**
@@ -11360,7 +11513,7 @@
 	     * // => false
 	     */
 	    function isElement(value) {
-	      return value != null && value.nodeType === 1 && isObjectLike(value) && !isPlainObject(value);
+	      return isObjectLike(value) && value.nodeType === 1 && !isPlainObject(value);
 	    }
 	
 	    /**
@@ -11397,9 +11550,12 @@
 	     * // => false
 	     */
 	    function isEmpty(value) {
+	      if (value == null) {
+	        return true;
+	      }
 	      if (isArrayLike(value) &&
-	          (isArray(value) || typeof value == 'string' ||
-	            typeof value.splice == 'function' || isBuffer(value) || isArguments(value))) {
+	          (isArray(value) || typeof value == 'string' || typeof value.splice == 'function' ||
+	            isBuffer(value) || isTypedArray(value) || isArguments(value))) {
 	        return !value.length;
 	      }
 	      var tag = getTag(value);
@@ -11407,7 +11563,7 @@
 	        return !value.size;
 	      }
 	      if (isPrototype(value)) {
-	        return !nativeKeys(value).length;
+	        return !baseKeys(value).length;
 	      }
 	      for (var key in value) {
 	        if (hasOwnProperty.call(value, key)) {
@@ -11425,7 +11581,7 @@
 	     * date objects, error objects, maps, numbers, `Object` objects, regexes,
 	     * sets, strings, symbols, and typed arrays. `Object` objects are compared
 	     * by their own, not inherited, enumerable properties. Functions and DOM
-	     * nodes are **not** supported.
+	     * nodes are compared by strict equality, i.e. `===`.
 	     *
 	     * @static
 	     * @memberOf _
@@ -11484,7 +11640,7 @@
 	    function isEqualWith(value, other, customizer) {
 	      customizer = typeof customizer == 'function' ? customizer : undefined;
 	      var result = customizer ? customizer(value, other) : undefined;
-	      return result === undefined ? baseIsEqual(value, other, customizer) : !!result;
+	      return result === undefined ? baseIsEqual(value, other, undefined, customizer) : !!result;
 	    }
 	
 	    /**
@@ -11509,8 +11665,9 @@
 	      if (!isObjectLike(value)) {
 	        return false;
 	      }
-	      return (objectToString.call(value) == errorTag) ||
-	        (typeof value.message == 'string' && typeof value.name == 'string');
+	      var tag = baseGetTag(value);
+	      return tag == errorTag || tag == domExcTag ||
+	        (typeof value.message == 'string' && typeof value.name == 'string' && !isPlainObject(value));
 	    }
 	
 	    /**
@@ -11561,10 +11718,13 @@
 	     * // => false
 	     */
 	    function isFunction(value) {
+	      if (!isObject(value)) {
+	        return false;
+	      }
 	      // The use of `Object#toString` avoids issues with the `typeof` operator
-	      // in Safari 8-9 which returns 'object' for typed array and other constructors.
-	      var tag = isObject(value) ? objectToString.call(value) : '';
-	      return tag == funcTag || tag == genTag;
+	      // in Safari 9 which returns 'object' for typed arrays and other constructors.
+	      var tag = baseGetTag(value);
+	      return tag == funcTag || tag == genTag || tag == asyncTag || tag == proxyTag;
 	    }
 	
 	    /**
@@ -11837,7 +11997,7 @@
 	     */
 	    function isNative(value) {
 	      if (isMaskable(value)) {
-	        throw new Error('This method is not supported with core-js. Try https://github.com/es-shims.');
+	        throw new Error(CORE_ERROR_TEXT);
 	      }
 	      return baseIsNative(value);
 	    }
@@ -11915,7 +12075,7 @@
 	     */
 	    function isNumber(value) {
 	      return typeof value == 'number' ||
-	        (isObjectLike(value) && objectToString.call(value) == numberTag);
+	        (isObjectLike(value) && baseGetTag(value) == numberTag);
 	    }
 	
 	    /**
@@ -11947,7 +12107,7 @@
 	     * // => true
 	     */
 	    function isPlainObject(value) {
-	      if (!isObjectLike(value) || objectToString.call(value) != objectTag) {
+	      if (!isObjectLike(value) || baseGetTag(value) != objectTag) {
 	        return false;
 	      }
 	      var proto = getPrototype(value);
@@ -11955,8 +12115,8 @@
 	        return true;
 	      }
 	      var Ctor = hasOwnProperty.call(proto, 'constructor') && proto.constructor;
-	      return (typeof Ctor == 'function' &&
-	        Ctor instanceof Ctor && funcToString.call(Ctor) == objectCtorString);
+	      return typeof Ctor == 'function' && Ctor instanceof Ctor &&
+	        funcToString.call(Ctor) == objectCtorString;
 	    }
 	
 	    /**
@@ -12047,7 +12207,7 @@
 	     */
 	    function isString(value) {
 	      return typeof value == 'string' ||
-	        (!isArray(value) && isObjectLike(value) && objectToString.call(value) == stringTag);
+	        (!isArray(value) && isObjectLike(value) && baseGetTag(value) == stringTag);
 	    }
 	
 	    /**
@@ -12069,7 +12229,7 @@
 	     */
 	    function isSymbol(value) {
 	      return typeof value == 'symbol' ||
-	        (isObjectLike(value) && objectToString.call(value) == symbolTag);
+	        (isObjectLike(value) && baseGetTag(value) == symbolTag);
 	    }
 	
 	    /**
@@ -12151,7 +12311,7 @@
 	     * // => false
 	     */
 	    function isWeakSet(value) {
-	      return isObjectLike(value) && objectToString.call(value) == weakSetTag;
+	      return isObjectLike(value) && baseGetTag(value) == weakSetTag;
 	    }
 	
 	    /**
@@ -12236,8 +12396,8 @@
 	      if (isArrayLike(value)) {
 	        return isString(value) ? stringToArray(value) : copyArray(value);
 	      }
-	      if (iteratorSymbol && value[iteratorSymbol]) {
-	        return iteratorToArray(value[iteratorSymbol]());
+	      if (symIterator && value[symIterator]) {
+	        return iteratorToArray(value[symIterator]());
 	      }
 	      var tag = getTag(value),
 	          func = tag == mapTag ? mapToArray : (tag == setTag ? setToArray : values);
@@ -12441,7 +12601,9 @@
 	     * // => 3
 	     */
 	    function toSafeInteger(value) {
-	      return baseClamp(toInteger(value), -MAX_SAFE_INTEGER, MAX_SAFE_INTEGER);
+	      return value
+	        ? baseClamp(toInteger(value), -MAX_SAFE_INTEGER, MAX_SAFE_INTEGER)
+	        : (value === 0 ? value : 0);
 	    }
 	
 	    /**
@@ -12452,8 +12614,8 @@
 	     * @memberOf _
 	     * @since 4.0.0
 	     * @category Lang
-	     * @param {*} value The value to process.
-	     * @returns {string} Returns the string.
+	     * @param {*} value The value to convert.
+	     * @returns {string} Returns the converted string.
 	     * @example
 	     *
 	     * _.toString(null);
@@ -12623,7 +12785,7 @@
 	     * @since 1.0.0
 	     * @category Object
 	     * @param {Object} object The object to iterate over.
-	     * @param {...(string|string[])} [paths] The property paths of elements to pick.
+	     * @param {...(string|string[])} [paths] The property paths to pick.
 	     * @returns {Array} Returns the picked values.
 	     * @example
 	     *
@@ -12670,7 +12832,7 @@
 	     */
 	    function create(prototype, properties) {
 	      var result = baseCreate(prototype);
-	      return properties ? baseAssign(result, properties) : result;
+	      return properties == null ? result : baseAssign(result, properties);
 	    }
 	
 	    /**
@@ -12695,7 +12857,7 @@
 	     * // => { 'a': 1, 'b': 2 }
 	     */
 	    var defaults = baseRest(function(args) {
-	      args.push(undefined, assignInDefaults);
+	      args.push(undefined, customDefaultsAssignIn);
 	      return apply(assignInWith, undefined, args);
 	    });
 	
@@ -12719,7 +12881,7 @@
 	     * // => { 'a': { 'b': 2, 'c': 3 } }
 	     */
 	    var defaultsDeep = baseRest(function(args) {
-	      args.push(undefined, mergeDefaults);
+	      args.push(undefined, customDefaultsMerge);
 	      return apply(mergeWith, undefined, args);
 	    });
 	
@@ -13350,15 +13512,16 @@
 	
 	    /**
 	     * The opposite of `_.pick`; this method creates an object composed of the
-	     * own and inherited enumerable string keyed properties of `object` that are
-	     * not omitted.
+	     * own and inherited enumerable property paths of `object` that are not omitted.
+	     *
+	     * **Note:** This method is considerably slower than `_.pick`.
 	     *
 	     * @static
 	     * @since 0.1.0
 	     * @memberOf _
 	     * @category Object
 	     * @param {Object} object The source object.
-	     * @param {...(string|string[])} [props] The property identifiers to omit.
+	     * @param {...(string|string[])} [paths] The property paths to omit.
 	     * @returns {Object} Returns the new object.
 	     * @example
 	     *
@@ -13367,12 +13530,26 @@
 	     * _.omit(object, ['a', 'c']);
 	     * // => { 'b': '2' }
 	     */
-	    var omit = flatRest(function(object, props) {
+	    var omit = flatRest(function(object, paths) {
+	      var result = {};
 	      if (object == null) {
-	        return {};
+	        return result;
 	      }
-	      props = arrayMap(props, toKey);
-	      return basePick(object, baseDifference(getAllKeysIn(object), props));
+	      var isDeep = false;
+	      paths = arrayMap(paths, function(path) {
+	        path = castPath(path, object);
+	        isDeep || (isDeep = path.length > 1);
+	        return path;
+	      });
+	      copyObject(object, getAllKeysIn(object), result);
+	      if (isDeep) {
+	        result = baseClone(result, CLONE_DEEP_FLAG | CLONE_FLAT_FLAG | CLONE_SYMBOLS_FLAG, customOmitClone);
+	      }
+	      var length = paths.length;
+	      while (length--) {
+	        baseUnset(result, paths[length]);
+	      }
+	      return result;
 	    });
 	
 	    /**
@@ -13407,7 +13584,7 @@
 	     * @memberOf _
 	     * @category Object
 	     * @param {Object} object The source object.
-	     * @param {...(string|string[])} [props] The property identifiers to pick.
+	     * @param {...(string|string[])} [paths] The property paths to pick.
 	     * @returns {Object} Returns the new object.
 	     * @example
 	     *
@@ -13416,8 +13593,8 @@
 	     * _.pick(object, ['a', 'c']);
 	     * // => { 'a': 1, 'c': 3 }
 	     */
-	    var pick = flatRest(function(object, props) {
-	      return object == null ? {} : basePick(object, arrayMap(props, toKey));
+	    var pick = flatRest(function(object, paths) {
+	      return object == null ? {} : basePick(object, paths);
 	    });
 	
 	    /**
@@ -13439,7 +13616,16 @@
 	     * // => { 'a': 1, 'c': 3 }
 	     */
 	    function pickBy(object, predicate) {
-	      return object == null ? {} : basePickBy(object, getAllKeysIn(object), getIteratee(predicate));
+	      if (object == null) {
+	        return {};
+	      }
+	      var props = arrayMap(getAllKeysIn(object), function(prop) {
+	        return [prop];
+	      });
+	      predicate = getIteratee(predicate);
+	      return basePickBy(object, props, function(value, path) {
+	        return predicate(value, path[0]);
+	      });
 	    }
 	
 	    /**
@@ -13472,15 +13658,15 @@
 	     * // => 'default'
 	     */
 	    function result(object, path, defaultValue) {
-	      path = isKey(path, object) ? [path] : castPath(path);
+	      path = castPath(path, object);
 	
 	      var index = -1,
 	          length = path.length;
 	
 	      // Ensure the loop is entered when path is empty.
 	      if (!length) {
-	        object = undefined;
 	        length = 1;
+	        object = undefined;
 	      }
 	      while (++index < length) {
 	        var value = object == null ? undefined : object[toKey(path[index])];
@@ -13637,22 +13823,23 @@
 	     * // => { '1': ['a', 'c'], '2': ['b'] }
 	     */
 	    function transform(object, iteratee, accumulator) {
-	      var isArr = isArray(object) || isTypedArray(object);
-	      iteratee = getIteratee(iteratee, 4);
+	      var isArr = isArray(object),
+	          isArrLike = isArr || isBuffer(object) || isTypedArray(object);
 	
+	      iteratee = getIteratee(iteratee, 4);
 	      if (accumulator == null) {
-	        if (isArr || isObject(object)) {
-	          var Ctor = object.constructor;
-	          if (isArr) {
-	            accumulator = isArray(object) ? new Ctor : [];
-	          } else {
-	            accumulator = isFunction(Ctor) ? baseCreate(getPrototype(object)) : {};
-	          }
-	        } else {
+	        var Ctor = object && object.constructor;
+	        if (isArrLike) {
+	          accumulator = isArr ? new Ctor : [];
+	        }
+	        else if (isObject(object)) {
+	          accumulator = isFunction(Ctor) ? baseCreate(getPrototype(object)) : {};
+	        }
+	        else {
 	          accumulator = {};
 	        }
 	      }
-	      (isArr ? arrayEach : baseForOwn)(object, function(value, index, object) {
+	      (isArrLike ? arrayEach : baseForOwn)(object, function(value, index, object) {
 	        return iteratee(accumulator, value, index, object);
 	      });
 	      return accumulator;
@@ -13776,7 +13963,7 @@
 	     * // => ['h', 'i']
 	     */
 	    function values(object) {
-	      return object ? baseValues(object, keys(object)) : [];
+	      return object == null ? [] : baseValues(object, keys(object));
 	    }
 	
 	    /**
@@ -14330,7 +14517,7 @@
 	      } else if (radix) {
 	        radix = +radix;
 	      }
-	      return nativeParseInt(toString(string), radix || 0);
+	      return nativeParseInt(toString(string).replace(reTrimStart, ''), radix || 0);
 	    }
 	
 	    /**
@@ -14505,7 +14692,10 @@
 	     */
 	    function startsWith(string, target, position) {
 	      string = toString(string);
-	      position = baseClamp(toInteger(position), 0, string.length);
+	      position = position == null
+	        ? 0
+	        : baseClamp(toInteger(position), 0, string.length);
+	
 	      target = baseToString(target);
 	      return string.slice(position, position + target.length) == target;
 	    }
@@ -14624,9 +14814,9 @@
 	        options = undefined;
 	      }
 	      string = toString(string);
-	      options = assignInWith({}, options, settings, assignInDefaults);
+	      options = assignInWith({}, options, settings, customDefaultsAssignIn);
 	
-	      var imports = assignInWith({}, options.imports, settings.imports, assignInDefaults),
+	      var imports = assignInWith({}, options.imports, settings.imports, customDefaultsAssignIn),
 	          importsKeys = keys(imports),
 	          importsValues = baseValues(imports, importsKeys);
 	
@@ -15163,7 +15353,7 @@
 	     * // => 'no match'
 	     */
 	    function cond(pairs) {
-	      var length = pairs ? pairs.length : 0,
+	      var length = pairs == null ? 0 : pairs.length,
 	          toIteratee = getIteratee();
 	
 	      pairs = !length ? [] : arrayMap(pairs, function(pair) {
@@ -15209,7 +15399,7 @@
 	     * // => [{ 'a': 1, 'b': 2 }]
 	     */
 	    function conforms(source) {
-	      return baseConforms(baseClone(source, true));
+	      return baseConforms(baseClone(source, CLONE_DEEP_FLAG));
 	    }
 	
 	    /**
@@ -15371,7 +15561,7 @@
 	     * // => ['def']
 	     */
 	    function iteratee(func) {
-	      return baseIteratee(typeof func == 'function' ? func : baseClone(func, true));
+	      return baseIteratee(typeof func == 'function' ? func : baseClone(func, CLONE_DEEP_FLAG));
 	    }
 	
 	    /**
@@ -15403,7 +15593,7 @@
 	     * // => [{ 'a': 4, 'b': 5, 'c': 6 }]
 	     */
 	    function matches(source) {
-	      return baseMatches(baseClone(source, true));
+	      return baseMatches(baseClone(source, CLONE_DEEP_FLAG));
 	    }
 	
 	    /**
@@ -15433,7 +15623,7 @@
 	     * // => { 'a': 4, 'b': 5, 'c': 6 }
 	     */
 	    function matchesProperty(path, srcValue) {
-	      return baseMatchesProperty(path, baseClone(srcValue, true));
+	      return baseMatchesProperty(path, baseClone(srcValue, CLONE_DEEP_FLAG));
 	    }
 	
 	    /**
@@ -15989,7 +16179,7 @@
 	      if (isArray(value)) {
 	        return arrayMap(value, toKey);
 	      }
-	      return isSymbol(value) ? [value] : copyArray(stringToPath(value));
+	      return isSymbol(value) ? [value] : copyArray(stringToPath(toString(value)));
 	    }
 	
 	    /**
@@ -16710,14 +16900,13 @@
 	    // Add `LazyWrapper` methods for `_.drop` and `_.take` variants.
 	    arrayEach(['drop', 'take'], function(methodName, index) {
 	      LazyWrapper.prototype[methodName] = function(n) {
-	        var filtered = this.__filtered__;
-	        if (filtered && !index) {
-	          return new LazyWrapper(this);
-	        }
 	        n = n === undefined ? 1 : nativeMax(toInteger(n), 0);
 	
-	        var result = this.clone();
-	        if (filtered) {
+	        var result = (this.__filtered__ && !index)
+	          ? new LazyWrapper(this)
+	          : this.clone();
+	
+	        if (result.__filtered__) {
 	          result.__takeCount__ = nativeMin(n, result.__takeCount__);
 	        } else {
 	          result.__views__.push({
@@ -16893,7 +17082,7 @@
 	      }
 	    });
 	
-	    realNames[createHybrid(undefined, BIND_KEY_FLAG).name] = [{
+	    realNames[createHybrid(undefined, WRAP_BIND_KEY_FLAG).name] = [{
 	      'name': 'wrapper',
 	      'func': undefined
 	    }];
@@ -16915,8 +17104,8 @@
 	    // Add lazy aliases.
 	    lodash.prototype.first = lodash.prototype.head;
 	
-	    if (iteratorSymbol) {
-	      lodash.prototype[iteratorSymbol] = wrapperToIterator;
+	    if (symIterator) {
+	      lodash.prototype[symIterator] = wrapperToIterator;
 	    }
 	    return lodash;
 	  });
@@ -52548,7 +52737,7 @@
 
 	/**
 	 memory-record - activerecord like in-memory data manager
-	 @version v0.2.8
+	 @version v0.3.0
 	 @link https://github.com/7korobi/memory-record
 	 @license 
 	**/
@@ -52568,7 +52757,7 @@
 	}).call(this);
 	
 	(function() {
-	  var Mem, OBJ, f_composite, f_item, f_merge, f_remove, f_reset;
+	  var Mem, OBJ, f_clear, f_item, f_merge, f_remove, f_reset;
 	
 	  OBJ = function() {
 	    return new Object(null);
@@ -52592,8 +52781,8 @@
 	    };
 	  };
 	
-	  f_composite = function() {
-	    return this.rule.finder.rehash();
+	  f_clear = function() {
+	    return this.rule.finder.clear_cache();
 	  };
 	
 	  Mem = module.exports;
@@ -52613,17 +52802,18 @@
 	
 	    Collection.prototype.create = f_item(f_merge);
 	
+	    Collection.prototype.del = f_item(f_remove);
+	
 	    Collection.prototype.remove = f_item(f_remove);
 	
-	    Collection.prototype.clear_cache = f_composite;
+	    Collection.prototype.clear_cache = f_clear;
 	
-	    Collection.prototype.refresh = f_composite;
+	    Collection.prototype.refresh = f_clear;
 	
-	    Collection.prototype.rehash = f_composite;
+	    Collection.prototype.rehash = f_clear;
 	
 	    function Collection(rule) {
 	      this.rule = rule;
-	      this.validates = [];
 	    }
 	
 	    return Collection;
@@ -52633,7 +52823,7 @@
 	}).call(this);
 	
 	(function() {
-	  var Mem, OBJ, _, each,
+	  var Mem, OBJ, _, composite_field, each, validate,
 	    slice = [].slice;
 	
 	  _ = __webpack_require__(1);
@@ -52643,87 +52833,160 @@
 	  };
 	
 	  each = function(from, process) {
-	    var i, id, item, len, ref, ref1;
+	    var i, id, item, len;
 	    switch (from != null ? from.constructor : void 0) {
 	      case Array:
-	        ref = from || [];
-	        for (i = 0, len = ref.length; i < len; i++) {
-	          item = ref[i];
-	          if (!item) {
-	            continue;
-	          }
+	        for (i = 0, len = from.length; i < len; i++) {
+	          item = from[i];
 	          process(item);
 	        }
 	        break;
 	      case Object:
-	        ref1 = from || {};
-	        for (id in ref1) {
-	          item = ref1[id];
-	          if (!item) {
-	            continue;
-	          }
+	        for (id in from) {
+	          item = from[id];
 	          item._id = id;
 	          process(item);
 	        }
+	        break;
+	      default:
+	        throw new Error("detect bad data: " + (JSON.stringify(from)));
 	    }
+	  };
+	
+	  validate = function(item, chklist) {
+	    var chk, i, len;
+	    for (i = 0, len = chklist.length; i < len; i++) {
+	      chk = chklist[i];
+	      if (!chk(item)) {
+	        return false;
+	      }
+	    }
+	    return true;
+	  };
+	
+	  composite_field = function(o, field) {
+	    var list;
+	    list = field + "s";
+	    o[list] = {};
+	    return o["set_" + field] = function(key, cb) {
+	      var base1;
+	      if ((base1 = o[list])[key] == null) {
+	        base1[key] = [];
+	      }
+	      return o[list][key].push(cb);
+	    };
 	  };
 	
 	  Mem = module.exports;
 	
 	  Mem.Base.Finder = (function() {
-	    function Finder(model, sortBy1, orderBy1) {
-	      var all;
-	      this.model = model;
-	      this.sortBy = sortBy1;
-	      this.orderBy = orderBy1;
-	      all = new Mem.Base.Query(this, [], this.sortBy, this.orderBy);
-	      all._memory = OBJ();
-	      this.scope = {
-	        all: all
+	    composite_field(Finder, "depend");
+	
+	    composite_field(Finder, "validate");
+	
+	    function Finder(name) {
+	      this.name = name;
+	      this.all = Mem.Base.Query.build(this);
+	      this.all.cache = {};
+	      this.scope = {};
+	      this.property = {
+	        first: {
+	          enumerable: false,
+	          get: function() {
+	            return this[0];
+	          }
+	        },
+	        last: {
+	          enumerable: false,
+	          get: function() {
+	            return this[this.length - 1];
+	          }
+	        },
+	        pluck: {
+	          enumerable: false,
+	          value: function() {
+	            var keys;
+	            keys = arguments;
+	            switch (keys.length) {
+	              case 0:
+	                return this.map(function() {
+	                  return null;
+	                });
+	              case 1:
+	                return this.map(function(o) {
+	                  return _.at(o, keys[0])[0];
+	                });
+	              default:
+	                return this.map(function(o) {
+	                  return _.at.apply(_, [o].concat(slice.call(keys)));
+	                });
+	            }
+	          }
+	        }
 	      };
-	      this.query = {
-	        all: all
-	      };
-	      this.validates = [];
 	    }
 	
-	    Finder.prototype.validate = function(cb) {
-	      return this.validates.push(cb);
+	    Finder.prototype.depends = function() {
+	      var f, i, len, ref;
+	      ref = Finder.depends[this.name.base];
+	      for (i = 0, len = ref.length; i < len; i++) {
+	        f = ref[i];
+	        f(this);
+	      }
 	    };
 	
-	    Finder.prototype.use_cache = function(key, query_call) {
-	      switch (query_call != null ? query_call.constructor : void 0) {
+	    Finder.prototype.validates = function(item) {
+	      return validate(item, Finder.validates[this.name.base]);
+	    };
+	
+	    Finder.prototype.use_cache = function(key, val) {
+	      this.scope[key] = val;
+	      switch (val != null ? val.constructor : void 0) {
 	        case Function:
-	          return this.query.all[key] = (function(_this) {
+	          return this.all[key] = (function(_this) {
 	            return function() {
 	              var args, base1, name;
 	              args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
-	              return (base1 = _this.query.all)[name = key + ":" + (JSON.stringify(args))] != null ? base1[name] : base1[name] = query_call.apply(null, args);
+	              return (base1 = _this.all.cache)[name = key + ":" + (JSON.stringify(args))] != null ? base1[name] : base1[name] = val.apply(null, args);
 	            };
 	          })(this);
 	        default:
-	          return this.query.all[key] = query_call;
+	          return this.all[key] = val;
 	      }
 	    };
 	
-	    Finder.prototype.rehash = function() {
-	      delete this.query.all._reduce;
-	      delete this.query.all._list;
-	      delete this.query.all._hash;
-	      this.query = {
-	        all: this.query.all
-	      };
+	    Finder.prototype.clear_cache = function() {
+	      delete this.all._reduce;
+	      delete this.all._list;
+	      delete this.all._hash;
+	      this.all.cache = {};
+	    };
+	
+	    Finder.prototype.save = function(query) {
+	      var i, item, len, ref, results;
+	      ref = query.list;
+	      results = [];
+	      for (i = 0, len = ref.length; i < len; i++) {
+	        item = ref[i];
+	        if (this.validates(item)) {
+	          results.push(this.model.save(item));
+	        } else {
+	          results.push(void 0);
+	        }
+	      }
+	      return results;
 	    };
 	
 	    Finder.prototype.calculate = function(query) {
-	      this.list(query, this.query.all._memory);
-	      if (query._list.length && (this.model.map_reduce != null)) {
+	      this.list(query, this.all._memory);
+	      if (query._list.length && this.model.do_map_reduce) {
 	        this.reduce(query);
-	        if (query._distinct != null) {
-	          this.group(query);
+	        if (query._group != null) {
+	          this.group(query, query._group);
 	        }
 	      }
 	      this.sort(query);
+	      Object.defineProperties(query._list, this.property);
 	    };
 	
 	    Finder.prototype.reduce = function(query) {
@@ -52796,30 +53059,39 @@
 	    };
 	
 	    Finder.prototype.sort = function(query) {
-	      var orderBy, sortBy;
-	      sortBy = query.sortBy, orderBy = query.orderBy;
+	      var orderBy, ref, sortBy;
+	      ref = query._sort, sortBy = ref[0], orderBy = ref[1];
 	      if (sortBy != null) {
 	        return query._list = orderBy != null ? _.orderBy(query._list, sortBy, orderBy) : _.sortBy(query._list, sortBy);
 	      }
 	    };
 	
 	    Finder.prototype.group = function(query) {
-	      var id, o, reduce, ref, target;
-	      ref = query._distinct, reduce = ref.reduce, target = ref.target;
+	      var deploy, id, o, reduce, reduce_path, reduced, ref, target, target_path;
+	      ref = query._group, reduce = ref.reduce, target = ref.target;
+	      reduce_path = _.property(reduce);
+	      target_path = _.property(target);
+	      deploy = function(id, o) {
+	        query._memory[id] = o;
+	        return query._hash[id] = o.item;
+	      };
+	      query._memory = OBJ();
+	      query._hash = OBJ();
 	      return query._list = (function() {
 	        var ref1, results;
-	        ref1 = query._reduce[reduce];
+	        ref1 = reduce_path(query._reduce);
 	        results = [];
 	        for (id in ref1) {
-	          o = ref1[id];
-	          results.push(o[target]);
+	          reduced = ref1[id];
+	          o = target_path(reduced);
+	          results.push(deploy(o._id, o));
 	        }
 	        return results;
 	      })();
 	    };
 	
 	    Finder.prototype.list = function(query, all) {
-	      var chk, deploy, every, id, o;
+	      var deploy, id, o;
 	      if (query._memory === all) {
 	        deploy = function(id, o) {
 	          return query._hash[id] = o.item;
@@ -52833,21 +53105,13 @@
 	      }
 	      query._hash = OBJ();
 	      return query._list = (function() {
-	        var i, len, ref, results;
+	        var i, len, ref, ref1, results;
+	        ref1 = (ref = query._all_ids) != null ? ref : Object.keys(all);
 	        results = [];
-	        for (id in all) {
+	        for (i = 0, len = ref1.length; i < len; i++) {
+	          id = ref1[i];
 	          o = all[id];
-	          every = true;
-	          ref = query.filters;
-	          for (i = 0, len = ref.length; i < len; i++) {
-	            chk = ref[i];
-	            if (!(!chk(o.item))) {
-	              continue;
-	            }
-	            every = false;
-	            break;
-	          }
-	          if (!every) {
+	          if (!validate(o.item, query._filters)) {
 	            continue;
 	          }
 	          results.push(deploy(id, o));
@@ -52858,84 +53122,76 @@
 	
 	    Finder.prototype.remove = function(from) {
 	      var _memory;
-	      _memory = this.query.all._memory;
+	      _memory = this.all._memory;
 	      each(from, (function(_this) {
 	        return function(item) {
 	          var old;
 	          old = _memory[item._id];
 	          if (old != null) {
-	            _this.model["delete"](old);
+	            _this.model["delete"](old.item);
 	            delete _memory[item._id];
 	          }
 	        };
 	      })(this));
-	      return this.rehash();
+	      return this.depends();
 	    };
 	
 	    Finder.prototype.reset = function(from, parent) {
 	      var _memory, item, key, news, old;
-	      _memory = this.query.all._memory;
-	      this.query.all._memory = news = OBJ();
+	      _memory = this.all._memory;
+	      this.all._memory = news = OBJ();
 	      this.merge(from, parent);
 	      for (key in _memory) {
 	        old = _memory[key];
 	        item = news[key];
 	        if (item != null) {
-	          this.model.update(item, old);
+	          this.model.update(item, old.item);
 	        } else {
 	          this.model["delete"](old);
 	        }
 	      }
-	      return this.rehash();
+	      return this.depends();
 	    };
 	
 	    Finder.prototype.merge = function(from, parent) {
 	      var _memory;
-	      _memory = this.query.all._memory;
+	      _memory = this.all._memory;
+	      this.model.do_map_reduce = false;
 	      each(from, (function(_this) {
 	        return function(item) {
-	          var chk, emit, every, i, key, len, o, old, ref, val;
+	          var key, o, old, val;
+	          item.__proto__ = _this.model.prototype;
 	          for (key in parent) {
 	            val = parent[key];
 	            item[key] = val;
 	          }
-	          item.__proto__ = _this.model.prototype;
-	          _this.model.call(item, item, _this.model);
-	          _this.model.rowid++;
-	          every = true;
-	          ref = _this.validates;
-	          for (i = 0, len = ref.length; i < len; i++) {
-	            chk = ref[i];
-	            if (!(!chk(item))) {
-	              continue;
-	            }
-	            every = false;
-	            break;
+	          _this.model.call(item, _this.model);
+	          if (!item._id) {
+	            throw new Error("detect bad data: " + (JSON.stringify(item)));
 	          }
-	          if (every) {
+	          if (_this.validates(item)) {
 	            o = {
 	              item: item,
 	              emits: []
 	            };
+	            _this.model.map_reduce(item, function() {
+	              var cmd, i, keys;
+	              keys = 2 <= arguments.length ? slice.call(arguments, 0, i = arguments.length - 1) : (i = 0, []), cmd = arguments[i++];
+	              o.emits.push([keys, cmd]);
+	              return _this.model.do_map_reduce = true;
+	            });
 	            old = _memory[item._id];
 	            if (old != null) {
-	              _this.model.update(item, old);
+	              _this.model.update(item, old.item);
 	            } else {
 	              _this.model.create(item);
+	              _this.model.rowid++;
 	            }
 	            _memory[item._id] = o;
-	            if (_this.model.map_reduce != null) {
-	              emit = function() {
-	                var cmd, j, keys;
-	                keys = 2 <= arguments.length ? slice.call(arguments, 0, j = arguments.length - 1) : (j = 0, []), cmd = arguments[j++];
-	                return o.emits.push([keys, cmd]);
-	              };
-	              _this.model.map_reduce(item, emit);
-	            }
 	          }
 	        };
 	      })(this));
-	      return this.rehash();
+	      return this.depends();
 	    };
 	
 	    return Finder;
@@ -52952,18 +53208,26 @@
 	  Mem.Base.Model = (function() {
 	    Model.rowid = 0;
 	
+	    Model.save = function(item) {};
+	
 	    Model.update = function(item, old) {};
 	
 	    Model.create = function(item) {};
 	
 	    Model["delete"] = function(old) {};
 	
-	    function Model(o, m) {
-	      if (!o._id) {
-	        o._id = o[m.id];
+	    Model.validate = function(item) {
+	      return true;
+	    };
+	
+	    Model.map_reduce = function(item, emit) {};
+	
+	    function Model(m) {
+	      if (!this._id) {
+	        this._id = this[m.id];
 	      }
-	      if (!o[m.id]) {
-	        o[m.id] = o._id;
+	      if (!this[m.id]) {
+	        this[m.id] = this._id;
 	      }
 	    }
 	
@@ -52974,7 +53238,7 @@
 	}).call(this);
 	
 	(function() {
-	  var Mem, OBJ, _, set_for,
+	  var Mem, OBJ, _, query_parser, set_for,
 	    slice = [].slice;
 	
 	  _ = __webpack_require__(1);
@@ -52993,54 +53257,75 @@
 	    return set;
 	  };
 	
-	  Mem = module.exports;
-	
-	  Mem.Base.Query = (function() {
-	    function Query(finder, filters1, sortBy1, orderBy1) {
-	      this.finder = finder;
-	      this.filters = filters1;
-	      this.sortBy = sortBy1;
-	      this.orderBy = orderBy1;
+	  query_parser = function(base, req, cb) {
+	    if (!req) {
+	      return base;
 	    }
-	
-	    Query.prototype._filters = function(req, cb) {
-	      var filters, path, target, type;
-	      if (!req) {
-	        return this;
-	      }
-	      filters = this.filters.concat();
-	      type = req != null ? req.constructor : void 0;
-	      switch (type) {
+	    return new Mem.Base.Query(base, function() {
+	      var key, results, val;
+	      this._filters = base._filters.concat();
+	      switch (req != null ? req.constructor : void 0) {
 	        case Object:
-	          for (target in req) {
-	            req = req[target];
-	            path = _.property(target);
-	            filters.push(cb(path, req));
+	          results = [];
+	          for (key in req) {
+	            val = req[key];
+	            results.push(cb(this, key, val, _.property(key)));
 	          }
+	          return results;
 	          break;
 	        case Function:
 	        case Array:
 	        case String:
-	          path = function(o) {
+	          return cb(this, null, req, function(o) {
 	            return o;
-	          };
-	          filters.push(cb(path, req));
-	          break;
+	          });
 	        default:
-	          console.log([type, req]);
+	          console.log({
+	            req: req
+	          });
 	          throw Error('unimplemented');
 	      }
-	      return new Query(this.finder, filters, this.orderBy);
+	    });
+	  };
+	
+	  Mem = module.exports;
+	
+	  Mem.Base.Query = (function() {
+	    Query.build = function(_finder) {
+	      var _all_ids, _filters, _group, _sort;
+	      _all_ids = _group = null;
+	      _filters = [];
+	      _sort = [];
+	      return new Mem.Base.Query({
+	        _finder: _finder,
+	        _all_ids: _all_ids,
+	        _group: _group,
+	        _filters: _filters,
+	        _sort: _sort
+	      }, function() {
+	        return this._memory = OBJ();
+	      });
+	    };
+	
+	    function Query(base, tap) {
+	      this._copy(base);
+	      tap.call(this);
+	    }
+	
+	    Query.prototype._copy = function(arg) {
+	      this._finder = arg._finder, this._all_ids = arg._all_ids, this._group = arg._group, this._filters = arg._filters, this._sort = arg._sort;
 	    };
 	
 	    Query.prototype["in"] = function(req) {
-	      return this._filters(req, function(path, req) {
-	        var set, type;
-	        type = req != null ? req.constructor : void 0;
-	        switch (type) {
+	      return query_parser(this, req, function(q, target, req, path) {
+	        var add, set;
+	        add = function(f) {
+	          return q._filters.push(f);
+	        };
+	        switch (req != null ? req.constructor : void 0) {
 	          case Array:
 	            set = set_for(req);
-	            return function(o) {
+	            return add(function(o) {
 	              var i, key, len, ref;
 	              ref = path(o);
 	              for (i = 0, len = ref.length; i < len; i++) {
@@ -53050,9 +53335,9 @@
 	                }
 	              }
 	              return false;
-	            };
+	            });
 	          case RegExp:
-	            return function(o) {
+	            return add(function(o) {
 	              var i, len, ref, val;
 	              ref = path(o);
 	              for (i = 0, len = ref.length; i < len; i++) {
@@ -53062,47 +53347,67 @@
 	                }
 	              }
 	              return false;
-	            };
+	            });
 	          case null:
 	          case Boolean:
 	          case String:
 	          case Number:
-	            return function(o) {
-	              set = set_for(path(o));
-	              return set[req];
-	            };
+	            return add(function(o) {
+	              var ref;
+	              return -1 < ((ref = path(o)) != null ? ref.indexOf(req) : void 0);
+	            });
 	          default:
-	            console.log([type, req]);
+	            console.log({
+	              target: target,
+	              req: req,
+	              path: path
+	            });
 	            throw Error('unimplemented');
 	        }
 	      });
 	    };
 	
 	    Query.prototype.where = function(req) {
-	      return this._filters(req, function(path, req) {
-	        var set, type;
-	        type = req != null ? req.constructor : void 0;
-	        switch (type) {
+	      return query_parser(this, req, function(q, target, req, path) {
+	        var add, set;
+	        add = function(f) {
+	          return q._filters.push(f);
+	        };
+	        switch (req != null ? req.constructor : void 0) {
 	          case Function:
-	            return req;
+	            return add(req);
 	          case Array:
-	            set = set_for(req);
-	            return function(o) {
-	              return set[path(o)];
-	            };
+	            if ("_id" === target) {
+	              return q._all_ids = req;
+	            } else {
+	              set = set_for(req);
+	              return add(function(o) {
+	                return set[path(o)];
+	              });
+	            }
+	            break;
 	          case RegExp:
-	            return function(o) {
+	            return add(function(o) {
 	              return req.test(path(o));
-	            };
+	            });
 	          case null:
 	          case Boolean:
 	          case String:
 	          case Number:
-	            return function(o) {
-	              return req === path(o);
-	            };
+	            if ("_id" === target) {
+	              return q._all_ids = [req];
+	            } else {
+	              return add(function(o) {
+	                return req === path(o);
+	              });
+	            }
+	            break;
 	          default:
-	            console.log([type, req]);
+	            console.log({
+	              target: target,
+	              req: req,
+	              path: path
+	            });
 	            throw Error('unimplemented');
 	        }
 	      });
@@ -53137,35 +53442,38 @@
 	    };
 	
 	    Query.prototype.distinct = function(reduce, target) {
-	      var query;
-	      query = new Query(this.finder, this.filters, this.orderBy);
-	      query._distinct = {
+	      var group;
+	      group = {
 	        reduce: reduce,
 	        target: target
 	      };
-	      return query;
-	    };
-	
-	    Query.prototype.sort = function(sortBy, orderBy) {
-	      if (_.isEqual([sortBy, orderBy], [this.sortBy, this.orderBy])) {
+	      if (_.isEqual(group, this._group)) {
 	        return this;
 	      }
-	      return new Query(this.finder, this.filters, sortBy, orderBy);
+	      return new Query(this, function() {
+	        return this._group = group;
+	      });
+	    };
+	
+	    Query.prototype.sort = function() {
+	      var sort;
+	      sort = 1 <= arguments.length ? slice.call(arguments, 0) : [];
+	      if (_.isEqual(sort, this._sort)) {
+	        return this;
+	      }
+	      return new Query(this, function() {
+	        return this._sort = sort;
+	      });
 	    };
 	
 	    Query.prototype.shuffle = function() {
-	      return new Query(this.finder, this.filters, Math.random);
-	    };
-	
-	    Query.prototype.clear = function() {
-	      delete this._reduce;
-	      delete this._list;
-	      delete this._hash;
-	      return delete this._memory;
+	      return new Query(this, function() {
+	        return this._sort = [Math.random];
+	      });
 	    };
 	
 	    Query.prototype.save = function() {
-	      return this.finder.save(this);
+	      return this._finder.save(this);
 	    };
 	
 	    Query.prototype.find = function(id) {
@@ -53185,31 +53493,15 @@
 	    };
 	
 	    Query.prototype.pluck = function() {
-	      var keys;
-	      keys = 1 <= arguments.length ? slice.call(arguments, 0) : [];
-	      switch (keys.length) {
-	        case 0:
-	          return this.list.map(function() {
-	            return null;
-	          });
-	        case 1:
-	          return this.list.map(function(o) {
-	            var a;
-	            a = _.at(o, keys)[0];
-	            return a;
-	          });
-	        default:
-	          return this.list.map(function(o) {
-	            return _.at(o, keys);
-	          });
-	      }
+	      var ref;
+	      return (ref = this.list).pluck.apply(ref, arguments);
 	    };
 	
 	    Object.defineProperties(Query.prototype, {
 	      reduce: {
 	        get: function() {
 	          if (this._reduce == null) {
-	            this.finder.calculate(this);
+	            this._finder.calculate(this);
 	          }
 	          return this._reduce;
 	        }
@@ -53217,7 +53509,7 @@
 	      list: {
 	        get: function() {
 	          if (this._list == null) {
-	            this.finder.calculate(this);
+	            this._finder.calculate(this);
 	          }
 	          return this._list;
 	        }
@@ -53225,7 +53517,7 @@
 	      hash: {
 	        get: function() {
 	          if (this._hash == null) {
-	            this.finder.calculate(this);
+	            this._finder.calculate(this);
 	          }
 	          return this._hash;
 	        }
@@ -53233,7 +53525,7 @@
 	      memory: {
 	        get: function() {
 	          if (this._memory == null) {
-	            this.finder.calculate(this);
+	            this._finder.calculate(this);
 	          }
 	          return this._memory;
 	        }
@@ -53252,58 +53544,49 @@
 	}).call(this);
 	
 	(function() {
-	  Object.defineProperties(Array.prototype, {
-	    first: {
-	      get: function() {
-	        return this[0];
-	      }
-	    },
-	    last: {
-	      get: function() {
-	        return this[this.length - 1];
-	      }
-	    },
-	    cycle: {
-	      value: function(n) {
-	        var i, idx, ref, results;
-	        results = [];
-	        for (idx = i = 0, ref = n; 0 <= ref ? i <= ref : i >= ref; idx = 0 <= ref ? ++i : --i) {
-	          results.push(this[idx % this.length]);
-	        }
-	        return results;
-	      }
-	    }
-	  });
-	
-	}).call(this);
-	
-	(function() {
-	  var Mem, _,
+	  var Mem, _, _rename, rename,
 	    extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-	    hasProp = {}.hasOwnProperty,
-	    slice = [].slice;
+	    hasProp = {}.hasOwnProperty;
 	
 	  _ = __webpack_require__(1);
+	
+	  _rename = {};
+	
+	  rename = function(base) {
+	    var id, ids, list, name;
+	    name = _rename[base];
+	    if (name) {
+	      return name;
+	    }
+	    id = base + "_id";
+	    ids = base + "_ids";
+	    list = base + "s";
+	    return _rename[base] = {
+	      id: id,
+	      ids: ids,
+	      list: list,
+	      base: base
+	    };
+	  };
 	
 	  Mem = module.exports;
 	
 	  Mem.Rule = (function() {
-	    function Rule(field) {
-	      this.field = field;
-	      this.model_id = this.field + "_id";
-	      this.model_list = this.field + "s";
-	      this.depend_on(this.field);
-	      this.finder = new Mem.Base.Finder("_id");
+	    function Rule(base, cb) {
+	      this.name = rename(base);
+	      this.depend_on(base);
+	      this.finder = new Mem.Base.Finder(this.name);
 	      this.model = Mem.Base.Model;
 	      this.dml = new Mem.Base.Collection(this);
-	      this.inits = [];
+	      this.property = {};
+	      if (cb) {
+	        this.schema(cb);
+	      }
+	      return;
 	    }
 	
 	    Rule.prototype.schema = function(cb) {
-	      var i, init, len, ref;
 	      cb.call(this, this.dml);
-	      this.model.id = this.model_id;
-	      this.model.list = this.model_list;
 	      if (this.model === Mem.Base.Model) {
 	        this.model = (function(superClass) {
 	          extend(model, superClass);
@@ -53316,120 +53599,206 @@
 	
 	        })(this.model);
 	      }
-	      ref = this.inits;
-	      for (i = 0, len = ref.length; i < len; i++) {
-	        init = ref[i];
-	        init();
+	      this.model.id = this.name.id;
+	      this.model.ids = this.name.ids;
+	      this.model.list = this.name.list;
+	      Object.defineProperties(this.model.prototype, this.property);
+	      if (this.model.validate) {
+	        this.validate(this.model.validate);
 	      }
-	      Mem.Model[this.field] = this.finder.model = this.model;
-	      Mem.Collection[this.field] = this.dml;
-	      Mem.Query[this.model_list] = this.finder.query.all;
+	      Mem.Collection[this.name.base] = this.dml;
+	      Mem.Model[this.name.base] = this.finder.model = this.model;
+	      Mem.Query[this.name.list] = this.finder.all;
 	      return this;
 	    };
 	
-	    Rule.prototype.composite = function() {
-	      var f, i, len, ref;
-	      ref = Mem.Composite[this.field];
-	      for (i = 0, len = ref.length; i < len; i++) {
-	        f = ref[i];
-	        f();
-	      }
+	    Rule.prototype.validate = function(cb) {
+	      return Mem.Base.Finder.set_validate(this.name.base, cb);
 	    };
 	
 	    Rule.prototype.depend_on = function(parent) {
-	      var base;
-	      if ((base = Mem.Composite)[parent] == null) {
-	        base[parent] = [];
-	      }
-	      return Mem.Composite[parent].push(function() {
-	        return Mem.Collection[parent].rule.finder.rehash();
+	      return Mem.Base.Finder.set_depend(parent, function(finder) {
+	        return finder.clear_cache();
 	      });
 	    };
 	
 	    Rule.prototype.scope = function(cb) {
-	      var key, query_call, ref, results;
-	      this.finder.scope = cb(this.finder.query.all);
-	      ref = this.finder.scope;
+	      var key, ref, results, val;
+	      ref = cb(this.finder.all);
 	      results = [];
 	      for (key in ref) {
-	        query_call = ref[key];
-	        results.push(this.finder.use_cache(key, query_call));
+	        val = ref[key];
+	        results.push(this.finder.use_cache(key, val));
 	      }
 	      return results;
 	    };
 	
-	    Rule.prototype.belongs_to = function(parent, option) {
-	      var dependent, parent_id, parents;
-	      parents = parent + "s";
-	      parent_id = parent + "_id";
-	      this.inits.push((function(_this) {
-	        return function() {
-	          return Object.defineProperty(_this.model.prototype, parent, {
-	            get: function() {
-	              return Mem.Query[parents].find(this[parent_id]);
-	            }
-	          });
-	        };
-	      })(this));
-	      dependent = option != null ? option.dependent : void 0;
-	      if (dependent) {
-	        this.depend_on(parent);
-	        return this.finder.validate(function(o) {
-	          return o[parent] != null;
-	        });
-	      }
-	    };
-	
-	    Rule.prototype.has_many = function(children, option) {
-	      var all, key, query;
-	      key = this.model_id;
-	      all = this.finder.query.all;
-	      query = option != null ? option.query : void 0;
-	      this.finder.use_cache(children, function(id) {
-	        if (query == null) {
-	          query = Mem.Query[children];
-	        }
-	        return query.where(function(o) {
-	          return o[key] === id;
-	        });
-	      });
-	      return this.inits.push((function(_this) {
-	        return function() {
-	          return Object.defineProperty(_this.model.prototype, children, {
-	            get: function() {
-	              return all[children](this._id);
-	            }
-	          });
-	        };
-	      })(this));
+	    Rule.prototype.default_scope = function(scope) {
+	      var all;
+	      all = this.finder.all;
+	      return all._copy(scope(all));
 	    };
 	
 	    Rule.prototype.shuffle = function() {
-	      var query;
-	      query = this.finder.query.all.shuffle();
-	      query._memory = this.finder.query.all._memory;
-	      return Mem.Query[this.model_list] = this.finder.query.all = query;
+	      return this.default_scope(function(all) {
+	        return all.shuffle();
+	      });
 	    };
 	
 	    Rule.prototype.order = function(sortBy, orderBy) {
-	      var query;
-	      query = this.finder.query.all.sort(sortBy, orderBy);
-	      query._memory = this.finder.query.all._memory;
-	      return Mem.Query[this.model_list] = this.finder.query.all = query;
+	      return this.default_scope(function(all) {
+	        return all.sort(sortBy, orderBy);
+	      });
 	    };
 	
-	    Rule.prototype.protect = function() {
-	      var keys;
-	      keys = 1 <= arguments.length ? slice.call(arguments, 0) : [];
-	      return this.protect = function(o, old) {
-	        var i, key, len, results;
-	        results = [];
-	        for (i = 0, len = keys.length; i < len; i++) {
-	          key = keys[i];
-	          results.push(o[key] = old[key]);
+	    Rule.prototype.sort = function(sortBy) {
+	      return this.default_scope(function(all) {
+	        return all.sort(sortBy);
+	      });
+	    };
+	
+	    Rule.prototype.relation_to_one = function(key, target, ik) {
+	      return this.property[key] = {
+	        enumerable: true,
+	        get: function() {
+	          return Mem.Query[target].find(this[ik]);
 	        }
-	        return results;
 	      };
+	    };
+	
+	    Rule.prototype.relation_to_many = function(key, target, ik, qk) {
+	      var all;
+	      all = this.finder.all;
+	      this.finder.use_cache(key, function(id) {
+	        var obj;
+	        return Mem.Query[target].where((
+	          obj = {},
+	          obj["" + qk] = id,
+	          obj
+	        ));
+	      });
+	      return this.property[key] = {
+	        enumerable: true,
+	        get: function() {
+	          return all[key](this[ik]);
+	        }
+	      };
+	    };
+	
+	    Rule.prototype.relation_tree = function(key, ik) {
+	      var all;
+	      all = this.finder.all;
+	      this.finder.use_cache(key, function(_id, n) {
+	        var obj, q;
+	        if (n) {
+	          q = all.where((
+	            obj = {},
+	            obj["" + ik] = _id,
+	            obj
+	          ));
+	          return all[key](q.ids, n - 1);
+	        } else {
+	          return all.where({
+	            _id: _id
+	          });
+	        }
+	      });
+	      return this.property[key] = {
+	        enumerable: true,
+	        value: function(n) {
+	          return all[key]([this._id], n);
+	        }
+	      };
+	    };
+	
+	    Rule.prototype.relation_graph = function(key, ik) {
+	      var all;
+	      all = this.finder.all;
+	      this.finder.use_cache(key, function(_id, n) {
+	        var a, i, j, k, len, len1, q, ref;
+	        q = all.where({
+	          _id: _id
+	        });
+	        if (n) {
+	          _id = [];
+	          ref = q.pluck(ik);
+	          for (i = 0, len = ref.length; i < len; i++) {
+	            a = ref[i];
+	            if (a != null) {
+	              for (j = 0, len1 = a.length; j < len1; j++) {
+	                k = a[j];
+	                if (k != null) {
+	                  _id.push(k);
+	                }
+	              }
+	            }
+	          }
+	          return all[key](_.uniq(_id), n - 1);
+	        } else {
+	          return q;
+	        }
+	      });
+	      return this.property[key] = {
+	        enumerable: true,
+	        value: function(n) {
+	          return all[key]([this._id], n);
+	        }
+	      };
+	    };
+	
+	    Rule.prototype.belongs_to = function(to, option) {
+	      var dependent, key, name, ref, ref1, target;
+	      if (option == null) {
+	        option = {};
+	      }
+	      name = rename(to);
+	      key = (ref = option.key) != null ? ref : name.id, target = (ref1 = option.target) != null ? ref1 : name.list, dependent = option.dependent;
+	      this.relation_to_one(name.base, target, key);
+	      if (dependent) {
+	        this.depend_on(name.base);
+	        return this.validate(_.property(name.base));
+	      }
+	    };
+	
+	    Rule.prototype.has_many = function(to, option) {
+	      var ik, key, name, qk, ref, target;
+	      if (option == null) {
+	        option = {};
+	      }
+	      name = rename(to.replace(/s$/, ""));
+	      key = option.key, target = (ref = option.target) != null ? ref : name.list;
+	      switch (option.by) {
+	        case "ids":
+	          ik = key != null ? key : name.ids;
+	          qk = "_id";
+	          break;
+	        default:
+	          ik = "_id";
+	          qk = key != null ? key : this.name.id;
+	      }
+	      return this.relation_to_many(name.list, target, ik, qk);
+	    };
+	
+	    Rule.prototype.tree = function(option) {
+	      if (option == null) {
+	        option = {};
+	      }
+	      this.relation_tree("nodes", this.name.id);
+	      return this.belongs_to(this.name.base, option);
+	    };
+	
+	    Rule.prototype.graph = function(option) {
+	      var cost, directed, ik;
+	      if (option == null) {
+	        option = {};
+	      }
+	      directed = option.directed, cost = option.cost;
+	      ik = this.name.ids;
+	      this.relation_to_many(this.name.list, this.name.list, ik, "_id");
+	      this.relation_graph("path", ik);
+	      if (!directed) {
+	        return true;
+	      }
 	    };
 	
 	    return Rule;
@@ -53999,36 +54368,6 @@
 	      return this._cancel();
 	    };
 	
-	    InputTie.prototype.errors = function(cb) {
-	      var dom, i, len, name, ref, ref1, results;
-	      ref = this._inputs;
-	      results = [];
-	      for (i = 0, len = ref.length; i < len; i++) {
-	        ref1 = ref[i], name = ref1.name, dom = ref1.dom;
-	        if (dom != null ? dom.validationMessage : void 0) {
-	          results.push(cb(dom.validationMessage, name));
-	        }
-	      }
-	      return results;
-	    };
-	
-	    InputTie.prototype.infos = function(cb) {
-	      var i, info_msg, len, name, ref, ref1, results;
-	      ref = this._inputs;
-	      results = [];
-	      for (i = 0, len = ref.length; i < len; i++) {
-	        ref1 = ref[i], name = ref1.name, info_msg = ref1.info_msg;
-	        if (info_msg) {
-	          if (info_msg) {
-	            results.push(cb(info_msg, name));
-	          } else {
-	            results.push(void 0);
-	          }
-	        }
-	      }
-	      return results;
-	    };
-	
 	    InputTie.prototype.submit = function() {
 	      var children, ma, tag;
 	      children = 1 <= arguments.length ? slice.call(arguments, 0) : [];
@@ -54044,14 +54383,39 @@
 	    };
 	
 	    InputTie.prototype.draw = function() {
-	      var i, input, len, ref, results;
-	      ref = this._inputs;
+	      var draw, i, len, ref, results;
+	      this._errors = null;
+	      ref = this._draws;
 	      results = [];
 	      for (i = 0, len = ref.length; i < len; i++) {
-	        input = ref[i];
-	        results.push(input.do_draw());
+	        draw = ref[i];
+	        results.push(draw());
 	      }
 	      return results;
+	    };
+	
+	    InputTie.prototype.draws = function(cb) {
+	      return this._draws.push(cb);
+	    };
+	
+	    InputTie.prototype.errors = function() {
+	      var _id, dom, i, len, ref, ref1;
+	      if (this._errors) {
+	        return this._errors;
+	      }
+	      this._errors = {};
+	      ref = this._inputs;
+	      for (i = 0, len = ref.length; i < len; i++) {
+	        ref1 = ref[i], _id = ref1._id, dom = ref1.dom;
+	        if (dom != null ? dom.validationMessage : void 0) {
+	          this._errors[_id] = dom.validationMessage;
+	        }
+	      }
+	      return this._errors;
+	    };
+	
+	    InputTie.prototype.infos = function() {
+	      return this._infos;
 	    };
 	
 	    InputTie.prototype.bind = function(input) {
@@ -54066,11 +54430,7 @@
 	      if (attr.multiple) {
 	        type = type.multiple;
 	      }
-	      this.input[_id] = input = new type(this, format);
-	      Tie.build_input(this.tie, _id, this.params, input);
-	      input.do_draw();
-	      this.do_change(input, this.params[_id]);
-	      return input;
+	      return this.input[_id] = input = new type(this, format);
 	    };
 	
 	    InputTie.prototype._submit = function(arg) {
@@ -54130,7 +54490,22 @@
 	      var i, id, ids, len;
 	      this.params = arg.params, ids = arg.ids;
 	      this._cancel();
+	      this._draws = [
+	        (function(_this) {
+	          return function() {
+	            var i, input, len, ref, results;
+	            ref = _this._inputs;
+	            results = [];
+	            for (i = 0, len = ref.length; i < len; i++) {
+	              input = ref[i];
+	              results.push(input.do_draw());
+	            }
+	            return results;
+	          };
+	        })(this)
+	      ];
 	      this._inputs = [];
+	      this._infos = {};
 	      this.input = {};
 	      this.tie = new Tie;
 	      for (i = 0, len = ids.length; i < len; i++) {
@@ -54776,7 +55151,7 @@
 	}).call(this);
 	
 	(function() {
-	  var InputTie, Mem, _, _attr_label, basic_input, change_attr, e_checked, e_selected, e_value, i, input_attr, input_pick, j, key, len, len1, m, number_input, option_pick, ref, ref1, validity_attr,
+	  var InputTie, Mem, Tie, _, _attr_label, basic_input, change_attr, e_checked, e_selected, e_value, i, input_attr, input_pick, j, key, len, len1, m, number_input, option_pick, ref, ref1, ref2, validity_by,
 	    slice = [].slice,
 	    extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
 	    hasProp = {}.hasOwnProperty;
@@ -54787,7 +55162,7 @@
 	
 	  _ = __webpack_require__(1);
 	
-	  InputTie = module.exports.InputTie;
+	  ref = module.exports, InputTie = ref.InputTie, Tie = ref.Tie;
 	
 	  input_pick = function(attrs, last) {
 	    return _.assignIn.apply(_, [{}].concat(slice.call(attrs), [last]));
@@ -54814,11 +55189,11 @@
 	  };
 	
 	  change_attr = function() {
-	    var _value, attrs, b, ma, ref, tie;
+	    var _value, attrs, b, ma, ref1, tie;
 	    attrs = 1 <= arguments.length ? slice.call(arguments, 0) : [];
-	    ref = b = this, _value = ref._value, tie = ref.tie;
+	    ref1 = b = this, _value = ref1._value, tie = ref1.tie;
 	    return ma = input_pick(attrs, {
-	      config: this.config,
+	      config: this.__config,
 	      disabled: tie.disabled,
 	      onblur: function(e) {
 	        return tie.do_blur(b, e);
@@ -54839,11 +55214,11 @@
 	  };
 	
 	  input_attr = function() {
-	    var _value, attrs, b, ma, ref, tie;
+	    var _value, attrs, b, ma, ref1, tie;
 	    attrs = 1 <= arguments.length ? slice.call(arguments, 0) : [];
-	    ref = b = this, _value = ref._value, tie = ref.tie;
+	    ref1 = b = this, _value = ref1._value, tie = ref1.tie;
 	    return ma = input_pick(attrs, {
-	      config: this.config,
+	      config: this.__config,
 	      disabled: tie.disabled,
 	      onblur: function(e) {
 	        return tie.do_blur(b, e);
@@ -54882,7 +55257,7 @@
 	    return news;
 	  };
 	
-	  validity_attr = {
+	  validity_by = {
 	    valid: "valid",
 	    valueMissing: "required",
 	    typeMismatch: "type",
@@ -54943,37 +55318,52 @@
 	    };
 	
 	    function basic_input(tie1, format) {
-	      var info, option_default, ref;
+	      var info, option_default, ref1;
 	      this.tie = tie1;
 	      this.format = format;
-	      ref = this.format, this._id = ref._id, this.options = ref.options, this.attr = ref.attr, this.name = ref.name, this.current = ref.current, info = ref.info, option_default = ref.option_default;
+	      ref1 = this.format, this._id = ref1._id, this.options = ref1.options, this.attr = ref1.attr, this.name = ref1.name, this.current = ref1.current, info = ref1.info, option_default = ref1.option_default;
 	      this.__info = info;
 	      this.__uri = Mem.pack[this.type];
 	      this.__val = Mem.unpack[this.type];
-	      this.config = this._config.bind(this);
+	      this.__config = this._config.bind(this);
 	      this.tie.bind(this);
 	      this.option_default = _.assign({}, this.option_default, option_default);
+	      Tie.build_input(this.tie.tie, this._id, this.tie.params, this);
+	      this["default"] = this.value();
+	      this.do_draw();
+	      this.tie.do_change(this, this["default"]);
+	      return;
 	    }
 	
-	    basic_input.prototype.info = function(info_msg) {
-	      this.info_msg = info_msg != null ? info_msg : "";
-	    };
-	
-	    basic_input.prototype.error = function(msg) {
-	      var ref;
+	    basic_input.prototype.info = function(msg) {
 	      if (msg == null) {
 	        msg = "";
 	      }
-	      return (ref = this.dom) != null ? ref.setCustomValidity(msg) : void 0;
+	      return this.tie._infos[this._id] = msg;
+	    };
+	
+	    basic_input.prototype.error = function(msg) {
+	      var ref1;
+	      if (msg == null) {
+	        msg = "";
+	      }
+	      return (ref1 = this.dom) != null ? ref1.setCustomValidity(msg) : void 0;
+	    };
+	
+	    basic_input.prototype.value = function(new_val) {
+	      if (arguments.length) {
+	        this.tie.do_change(this, this.__val(new_val));
+	      }
+	      return this.tie.params[this._id];
 	    };
 	
 	    basic_input.prototype.isDirty = function() {
-	      return this._dirty;
+	      return this["default"] === this.value();
 	    };
 	
 	    basic_input.prototype.isValid = function() {
-	      var ref;
-	      return (ref = this.dom) != null ? ref.checkValidity() : void 0;
+	      var ref1;
+	      return (ref1 = this.dom) != null ? ref1.checkValidity() : void 0;
 	    };
 	
 	    basic_input.prototype.do_fail = function(value) {};
@@ -54983,23 +55373,24 @@
 	    basic_input.prototype.do_blur = function() {};
 	
 	    basic_input.prototype.do_draw = function() {
-	      var info, label, ref;
-	      ref = this.format, info = ref.info, label = ref.label;
+	      var info, label, ref1, ref2;
+	      ref1 = this.format, info = ref1.info, label = ref1.label;
 	      this.__name = this.attr.name || this._id;
-	      return this.__value = this.tie.params[this._id];
+	      this.__value = this.value();
+	      return this.tie.errors[this._id] = ((ref2 = this.dom) != null ? ref2.validationMessage : void 0) || "";
 	    };
 	
 	    basic_input.prototype.do_change = function(value) {
-	      var key, msg, ref, val;
+	      var key, msg, ref1, val;
 	      if (this.dom && !this.dom.validity.customError) {
 	        if (this.format.error) {
-	          ref = this.dom.validity;
-	          for (key in ref) {
-	            val = ref[key];
+	          ref1 = this.dom.validity;
+	          for (key in ref1) {
+	            val = ref1[key];
 	            if (!(val)) {
 	              continue;
 	            }
-	            msg = this.format.error[validity_attr[key]];
+	            msg = this.format.error[validity_by[key]];
 	            if (msg) {
 	              this.error(msg);
 	              return;
@@ -55010,9 +55401,9 @@
 	    };
 	
 	    basic_input.prototype.option = function(value) {
-	      var ref;
+	      var ref1;
 	      if (value) {
-	        return ((ref = this.options) != null ? ref[value] : void 0) || {};
+	        return ((ref1 = this.options) != null ? ref1[value] : void 0) || {};
 	      } else {
 	        return this.option_default;
 	      }
@@ -55109,15 +55500,15 @@
 	
 	  })(basic_input);
 	
-	  ref = ["hidden", "tel", "password", "datetime", "date", "month", "week", "time", "datetime-local", "color"];
-	  for (i = 0, len = ref.length; i < len; i++) {
-	    key = ref[i];
+	  ref1 = ["hidden", "tel", "password", "datetime", "date", "month", "week", "time", "datetime-local", "color"];
+	  for (i = 0, len = ref1.length; i < len; i++) {
+	    key = ref1[i];
 	    InputTie.type[key] = basic_input;
 	  }
 	
-	  ref1 = ["number", "range"];
-	  for (j = 0, len1 = ref1.length; j < len1; j++) {
-	    key = ref1[j];
+	  ref2 = ["number", "range"];
+	  for (j = 0, len1 = ref2.length; j < len1; j++) {
+	    key = ref2[j];
 	    InputTie.type[key] = number_input;
 	  }
 	
@@ -55135,9 +55526,9 @@
 	    checkbox.prototype.type = "Bool";
 	
 	    checkbox.prototype.option = function(value) {
-	      var ref2, sw;
+	      var ref3, sw;
 	      sw = value ? "on" : "off";
-	      return ((ref2 = this.options) != null ? ref2[sw] : void 0) || {};
+	      return ((ref3 = this.options) != null ? ref3[sw] : void 0) || {};
 	    };
 	
 	    checkbox.prototype.field = function(m_attr) {
@@ -55177,11 +55568,11 @@
 	        m_attr = {};
 	      }
 	      list = (function() {
-	        var ref2, results;
-	        ref2 = this.options;
+	        var ref3, results;
+	        ref3 = this.options;
 	        results = [];
-	        for (value in ref2) {
-	          option = ref2[value];
+	        for (value in ref3) {
+	          option = ref3[value];
 	          if (!option.hidden) {
 	            results.push(this.item(value, m_attr));
 	          }
@@ -55236,11 +55627,11 @@
 	        m_attr = {};
 	      }
 	      list = (function() {
-	        var ref2, results;
-	        ref2 = this.options;
+	        var ref3, results;
+	        ref3 = this.options;
 	        results = [];
-	        for (value in ref2) {
-	          option = ref2[value];
+	        for (value in ref3) {
+	          option = ref3[value];
 	          if (!option.hidden) {
 	            results.push(this.item(value, m_attr));
 	          }
@@ -55282,11 +55673,11 @@
 	        name: this.__name
 	      });
 	      return m('select', ma, (function() {
-	        var ref2, results;
-	        ref2 = this.options;
+	        var ref3, results;
+	        ref3 = this.options;
 	        results = [];
-	        for (value in ref2) {
-	          option = ref2[value];
+	        for (value in ref3) {
+	          option = ref3[value];
 	          if (!option.hidden) {
 	            results.push(this.item(value));
 	          }
@@ -55399,7 +55790,7 @@
 	        css += " " + className;
 	      }
 	      return ma = _pick(attrs, {
-	        config: this.config,
+	        config: this.__config,
 	        className: css,
 	        onclick: onchange,
 	        onmouseup: onchange,
@@ -55879,7 +56270,7 @@
 	        return tie.do_blur(b, e);
 	      };
 	      return ma = _pick(attrs, {
-	        config: this.config,
+	        config: this.__config,
 	        ontouchend: blur,
 	        ontouchmove: move,
 	        ontouchstart: focus,
@@ -56236,7 +56627,7 @@
 	      attrs = 1 <= arguments.length ? slice.call(arguments, 0) : [];
 	      ref1 = b = this, _value = ref1._value, tie = ref1.tie, ctx = ref1.ctx;
 	      return ma = _pick(attrs, {
-	        config: this.config
+	        config: this.__config
 	      });
 	    };
 	

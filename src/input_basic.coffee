@@ -144,10 +144,8 @@ class basic_input
             return
 
   option: (value)->
-    if value
-      @options?[value] || {}
-    else
-      @option_default
+    h = @options ? {}
+    h[value] ? @option_default
 
   item: (value, m_attr = {})->
     option = @option value

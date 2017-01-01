@@ -1,6 +1,6 @@
 /**
  mithril-tie - browser input helper for mithril
- @version v0.1.0
+ @version v0.1.1
  @link https://github.com/7korobi/mithril-tie
  @license 
 **/
@@ -1339,12 +1339,9 @@
     };
 
     basic_input.prototype.option = function(value) {
-      var ref1;
-      if (value) {
-        return ((ref1 = this.options) != null ? ref1[value] : void 0) || {};
-      } else {
-        return this.option_default;
-      }
+      var h, ref1, ref2;
+      h = (ref1 = this.options) != null ? ref1 : {};
+      return (ref2 = h[value]) != null ? ref2 : this.option_default;
     };
 
     basic_input.prototype.item = function(value, m_attr) {
@@ -1880,12 +1877,16 @@
       return tags[tag](value, ma, option);
     };
 
-    menuicon = function(icon, attr, option) {
-      return m("a.menuicon", attr, m("span.icon-" + icon), option.badge ? m(".emboss.pull-right", option.badge()) : void 0);
+    menuicon = function(id, attr, arg) {
+      var badge, icon, ref;
+      icon = (ref = arg.icon) != null ? ref : id, badge = arg.badge;
+      return m("a.menuicon", attr, m("span.icon-" + icon), badge ? m(".emboss.pull-right", badge()) : void 0);
     };
 
-    bigicon = function(icon, attr, option) {
-      return m("section", attr, m(".bigicon", m("span.icon-" + icon)), option.badge ? m(".badge.pull-right", option.badge()) : void 0);
+    bigicon = function(id, attr, arg) {
+      var badge, icon, ref;
+      icon = (ref = arg.icon) != null ? ref : id, badge = arg.badge;
+      return m("section", attr, m(".bigicon", m("span.icon-" + icon)), badge ? m(".badge.pull-right", badge()) : void 0);
     };
 
     tags = {

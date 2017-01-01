@@ -136,17 +136,16 @@ class InputTie.type.icon extends btn_input
     # data-tooltip, disabled
     tags[tag] value, ma, option
 
-  menuicon = (icon, attr, option)->
+  menuicon = (id, attr, { icon = id, badge })->
     m "a.menuicon", attr,
       m "span.icon-#{icon}"
-      m ".emboss.pull-right", option.badge() if option.badge
+      m ".emboss.pull-right", badge() if badge
 
-  bigicon = (icon, attr, option)->
+  bigicon = (id, attr, { icon = id, badge })->
     m "section", attr,
       m ".bigicon",
         m "span.icon-#{icon}"
-      m ".badge.pull-right", option.badge() if option.badge
-
+      m ".badge.pull-right", badge() if badge
   tags = { menuicon, bigicon }
 
 

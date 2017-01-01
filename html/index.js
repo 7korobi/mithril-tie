@@ -54062,18 +54062,14 @@
 
 	/**
 	 mithril-tie - browser input helper for mithril
-	 @version v0.0.10
+	 @version v0.1.0
 	 @link https://github.com/7korobi/mithril-tie
 	 @license 
 	**/
 	
 	
 	(function() {
-	  module.exports = {
-	    deploy: function(arg) {
-	      this.devicePixelRatio = arg.devicePixelRatio;
-	    }
-	  };
+	  module.exports = {};
 	
 	}).call(this);
 	
@@ -55405,12 +55401,9 @@
 	    };
 	
 	    basic_input.prototype.option = function(value) {
-	      var ref1;
-	      if (value) {
-	        return ((ref1 = this.options) != null ? ref1[value] : void 0) || {};
-	      } else {
-	        return this.option_default;
-	      }
+	      var h, ref1, ref2;
+	      h = (ref1 = this.options) != null ? ref1 : {};
+	      return (ref2 = h[value]) != null ? ref2 : this.option_default;
 	    };
 	
 	    basic_input.prototype.item = function(value, m_attr) {
@@ -55946,12 +55939,16 @@
 	      return tags[tag](value, ma, option);
 	    };
 	
-	    menuicon = function(icon, attr, option) {
-	      return m("a.menuicon", attr, m("span.icon-" + icon), option.badge ? m(".emboss.pull-right", option.badge()) : void 0);
+	    menuicon = function(id, attr, arg) {
+	      var badge, icon, ref;
+	      icon = (ref = arg.icon) != null ? ref : id, badge = arg.badge;
+	      return m("a.menuicon", attr, m("span.icon-" + icon), badge ? m(".emboss.pull-right", badge()) : void 0);
 	    };
 	
-	    bigicon = function(icon, attr, option) {
-	      return m("section", attr, m(".bigicon", m("span.icon-" + icon)), option.badge ? m(".badge.pull-right", option.badge()) : void 0);
+	    bigicon = function(id, attr, arg) {
+	      var badge, icon, ref;
+	      icon = (ref = arg.icon) != null ? ref : id, badge = arg.badge;
+	      return m("section", attr, m(".bigicon", m("span.icon-" + icon)), badge ? m(".badge.pull-right", badge()) : void 0);
 	    };
 	
 	    tags = {
@@ -56104,7 +56101,7 @@
 	}).call(this);
 	
 	(function() {
-	  var InputTie, Mem, OBJ, Tie, _, _pick, browser, capture, m, mouse, ratio, ref, touch, touch_A, touch_B, window,
+	  var InputTie, Mem, OBJ, RATIO, Tie, _, _pick, browser, capture, m, mouse, ref, touch, touch_A, touch_B, winX, winY,
 	    slice = [].slice,
 	    extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
 	    hasProp = {}.hasOwnProperty;
@@ -56115,9 +56112,31 @@
 	
 	  _ = __webpack_require__(1);
 	
-	  ref = module.exports, InputTie = ref.InputTie, Tie = ref.Tie, window = ref.window;
+	  ref = module.exports, InputTie = ref.InputTie, Tie = ref.Tie;
 	
-	  ratio = window.devicePixcelRatio;
+	  console.warn("deploy");
+	
+	  RATIO = function() {
+	    return 1;
+	  };
+	
+	  winX = winY = function() {
+	    return 0;
+	  };
+	
+	  module.exports.deploy = function(arg) {
+	    var window;
+	    window = arg.window;
+	    RATIO = function() {
+	      return window.devicePixelRatio;
+	    };
+	    winX = function() {
+	      return window.scrollX;
+	    };
+	    winY = function() {
+	      return window.scrollY;
+	    };
+	  };
 	
 	  OBJ = function() {
 	    return new Object(null);
@@ -56160,8 +56179,8 @@
 	    x = event.offsetX || event.layerX;
 	    y = event.offsetY || event.layerY;
 	    if ((x != null) && (y != null)) {
-	      x *= devicePixelRatio;
-	      y *= devicePixelRatio;
+	      x *= RATIO();
+	      y *= RATIO();
 	      return [x, y];
 	    }
 	  };
@@ -56170,8 +56189,8 @@
 	    var left, pageX, pageY, top, x, y;
 	    pageX = arg.pageX, pageY = arg.pageY;
 	    left = arg1.left, top = arg1.top;
-	    x = devicePixelRatio * (pageX - left - window.scrollX);
-	    y = devicePixelRatio * (pageY - top - window.scrollY);
+	    x = RATIO() * (pageX - left - winX());
+	    y = RATIO() * (pageY - top - winY());
 	    return [x, y];
 	  };
 	
@@ -56179,8 +56198,8 @@
 	    var left, pageX, pageY, top, x, y;
 	    pageX = arg.pageX, pageY = arg.pageY;
 	    left = arg1.left, top = arg1.top;
-	    x = devicePixelRatio * (pageX - left);
-	    y = devicePixelRatio * (pageY - top - window.scrollY);
+	    x = RATIO() * (pageX - left);
+	    y = RATIO() * (pageY - top - winY());
 	    return [x, y];
 	  };
 	
@@ -56297,7 +56316,7 @@
 	        className: [this.attr.className, m_attr.className].join(" "),
 	        width: w,
 	        height: h,
-	        style: "width: " + (w / devicePixelRatio) + "px; height: " + (h / devicePixelRatio) + "px;"
+	        style: "width: " + (w / RATIO()) + "px; height: " + (h / RATIO()) + "px;"
 	      });
 	      return m("canvas", ma);
 	    };
